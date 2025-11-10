@@ -79,7 +79,7 @@ class ThreadsafeChannel:
             lambda c, e: self.__messages.shutdown(immediate=True)
         )
 
-    def declare_queue(
+    def queue_declare(
         self,
         queue: str,
         passive: bool = False,
@@ -96,6 +96,25 @@ class ThreadsafeChannel:
                 durable=durable,
                 exclusive=exclusive,
                 auto_delete=auto_delete,
+                arguments=arguments,
+                callback=future.set_result,
+            )
+        )
+        return future.result()
+
+    def queue_bind(
+        self,
+        queue: str,
+        exchange: str,
+        routing_key: str | None = None,
+        arguments: Mapping[str, Any] | None = None,
+    ) -> frame.Method[spec.Queue.BindOk]:
+        future: Future[frame.Method[spec.Queue.BindOk]] = Future()
+        self.__wait(
+            lambda: self.__channel.queue_bind(
+                queue=queue,
+                exchange=exchange,
+                routing_key=routing_key,
                 arguments=arguments,
                 callback=future.set_result,
             )
@@ -197,3 +216,11 @@ class ThreadsafeChannel:
                 yield self.__messages.get()
             except ShutDown:
                 return
+
+    def close(self, reply_code: int = 0, reply_text: str = "Normal shutdown"):
+        self.__wait(
+            lambda: self.__channel.close(
+                reply_code=reply_code,
+                reply_text=reply_text,
+            )
+        )

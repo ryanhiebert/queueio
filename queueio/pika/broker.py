@@ -29,7 +29,7 @@ class PikaBroker(Broker):
         self.__channel.publish(exchange="", routing_key=queue, body=body)
 
     def create(self, *, queue: str):
-        self.__channel.declare_queue(queue=queue, durable=True)
+        self.__channel.queue_declare(queue=queue, durable=True)
 
     def purge(self, *, queue: str):
         self.__channel.purge(queue=queue)
