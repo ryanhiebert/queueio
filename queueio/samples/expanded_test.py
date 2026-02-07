@@ -15,15 +15,15 @@ def test_integration():
     queueio = QueueIO()
 
     with queueio.activate():
-        queueio.create(queue="queueio")
-        queueio.purge(queue="queueio")
+        queueio.create(queue="expanded")
+        queueio.purge(queue="expanded")
         events = queueio.subscribe({Invocation.Completed})
         invocation = irregular()
         queueio.submit(invocation)
 
         # 1. Start worker process in the background
         proc = subprocess.Popen(
-            [sys.executable, "-m", "queueio", "run", "queueio=1"],
+            [sys.executable, "-m", "queueio", "run", "expanded=1"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )

@@ -7,12 +7,12 @@ from queueio import pause
 from queueio import routine
 
 
-@routine(name="blocking", queue="queueio")
+@routine(name="blocking", queue="basic")
 def blocking():
     sleep(0.1)  # Regular blocking call
 
 
-@routine(name="yielding", queue="queueio")
+@routine(name="yielding", queue="basic")
 async def yielding(iterations: int):
     # Do them two at a time
     for _ in range(iterations // 2):

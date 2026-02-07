@@ -6,7 +6,7 @@ from queueio.gather import gather
 from queueio.pause import pause
 
 
-@routine(name="regular", queue="queueio")
+@routine(name="regular", queue="expanded")
 def regular(instance: int, iterations: int):
     for i in range(iterations):
         print(f"Iteration {instance} {i} started")
@@ -15,12 +15,12 @@ def regular(instance: int, iterations: int):
     return f"Instance {instance} completed"
 
 
-@routine(name="raises", queue="queueio")
+@routine(name="raises", queue="expanded")
 def raises():
     raise ValueError("This is a test exception")
 
 
-@routine(name="aregular", queue="queueio")
+@routine(name="aregular", queue="expanded")
 async def aregular(instance: int, iterations: int):
     return await regular(instance, iterations)
 
@@ -33,7 +33,7 @@ async def abstract(instance: int, iterations: int):
     return await aregular(instance, iterations)
 
 
-@routine(name="irregular", queue="queueio")
+@routine(name="irregular", queue="expanded")
 async def irregular():
     await regular(1, 2)
     print("irregular sleep started")
