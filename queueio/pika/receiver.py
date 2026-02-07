@@ -27,6 +27,9 @@ class PikaReceiver(Receiver):
         self.__prefetch = 0
         self.__adjust_prefetch(+queuespec.concurrency)
 
+        self.__shutdown_lock = Lock()
+        self.__shutdown = False
+
         for queue in queuespec.queues:
             result = self.__channel.consume(queue)
             self.__consumer_tag[queue] = cast(str, result.method.consumer_tag)
@@ -68,5 +71,10 @@ class PikaReceiver(Receiver):
         self.__channel.ack(delivery_tag=self.__tag.pop(message))
 
     def shutdown(self):
-        for consumer_tag in self.__consumer_tag.values():
-            self.__channel.cancel(consumer_tag=consumer_tag)
+        with self.__shutdown_lock:
+            if self.__shutdown:
+                return
+            self.__shutdown = True
+
+            for consumer_tag in self.__consumer_tag.values():
+                self.__channel.cancel(consumer_tag=consumer_tag)
