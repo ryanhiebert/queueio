@@ -65,7 +65,7 @@ class BaseBrokerTest:
 
         # Enqueue more messages than prefetch limit
         for i in range(3):
-            broker.enqueue(f"message{i}".encode(), queue="test-queue")
+            broker.enqueue(f"message{i}".encode(), queue="test-queue", priority=4)
 
         received_messages = []
         prefetch_limit = 2
@@ -98,7 +98,7 @@ class BaseBrokerTest:
 
         # Enqueue messages
         for i in range(3):
-            broker.enqueue(f"msg{i}".encode(), queue="test-queue")
+            broker.enqueue(f"msg{i}".encode(), queue="test-queue", priority=4)
 
         received_messages = []
         prefetch_limit = 2
@@ -136,7 +136,7 @@ class BaseBrokerTest:
 
         # Enqueue more messages than prefetch limit
         for i in range(4):
-            broker.enqueue(f"test{i}".encode(), queue="test-queue")
+            broker.enqueue(f"test{i}".encode(), queue="test-queue", priority=4)
 
         received_messages = []
         prefetch_limit = 2
@@ -176,7 +176,7 @@ class BaseBrokerTest:
 
         # Enqueue enough messages for both receivers
         for i in range(5):
-            broker.enqueue(f"msg{i}".encode(), queue="test-queue")
+            broker.enqueue(f"msg{i}".encode(), queue="test-queue", priority=4)
 
         receiver1_messages = []
         receiver2_messages = []
@@ -229,9 +229,9 @@ class BaseBrokerTest:
         broker.purge(queue="queue2")
 
         # Enqueue messages to different queues
-        broker.enqueue(b"msg1", queue="queue1")
-        broker.enqueue(b"msg2", queue="queue2")
-        broker.enqueue(b"msg3", queue="queue1")
+        broker.enqueue(b"msg1", queue="queue1", priority=4)
+        broker.enqueue(b"msg2", queue="queue2", priority=4)
+        broker.enqueue(b"msg3", queue="queue1", priority=4)
 
         queuespec = QueueSpec(queues=["queue1", "queue2"], concurrency=3)
         received_messages = []
@@ -270,9 +270,9 @@ class BaseBrokerTest:
         broker.purge(queue="also_filled")
 
         # Add messages to some queues but not others
-        broker.enqueue(b"message_a", queue="filled")
-        broker.enqueue(b"message_b", queue="also_filled")
-        broker.enqueue(b"message_c", queue="filled")
+        broker.enqueue(b"message_a", queue="filled", priority=4)
+        broker.enqueue(b"message_b", queue="also_filled", priority=4)
+        broker.enqueue(b"message_c", queue="filled", priority=4)
 
         received_messages = []
         queuespec = QueueSpec(
@@ -315,8 +315,8 @@ class BaseBrokerTest:
 
         # Enqueue equal numbers of messages to both queues
         for i in range(20):
-            broker.enqueue(f"priority_{i}".encode(), queue="priority_queue")
-            broker.enqueue(f"normal_{i}".encode(), queue="normal_queue")
+            broker.enqueue(f"priority_{i}".encode(), queue="priority_queue", priority=4)
+            broker.enqueue(f"normal_{i}".encode(), queue="normal_queue", priority=4)
 
         received_messages = []
         selection_order = []  # Track the order messages were received
@@ -419,8 +419,8 @@ class BaseBrokerTest:
 
         # Only queue1 and queue2 have messages, empty is always empty
         for i in range(50):
-            broker.enqueue(f"msg1_{i}".encode(), queue="queue1")
-            broker.enqueue(f"msg2_{i}".encode(), queue="queue2")
+            broker.enqueue(f"msg1_{i}".encode(), queue="queue1", priority=4)
+            broker.enqueue(f"msg2_{i}".encode(), queue="queue2", priority=4)
 
         received_messages = []
         selection_order = []
@@ -467,6 +467,36 @@ class BaseBrokerTest:
             f"Expected balanced distribution, got {q1_early}:{q2_early}. "
             f"Actual order: {''.join(first_half)}"
         )
+        broker.shutdown()
+        thread.join(timeout=1.0)
+
+    @pytest.mark.timeout(2)
+    def test_higher_priority_consumed_first(self, broker):
+        """Verify that higher priority messages are consumed before lower ones."""
+        broker.create(queue="test-queue")
+        broker.purge(queue="test-queue")
+
+        # Enqueue low priority first, then high priority
+        broker.enqueue(b"low", queue="test-queue", priority=0)
+        broker.enqueue(b"high", queue="test-queue", priority=9)
+
+        received_messages = []
+        queuespec = QueueSpec(queues=["test-queue"], concurrency=1)
+
+        def receive_messages():
+            receiver = broker.receive(queuespec)
+            for message in receiver:
+                received_messages.append(message.body)
+                receiver.finish(message)
+                if len(received_messages) >= 2:
+                    break
+
+        thread = threading.Thread(target=receive_messages)
+        thread.start()
+        thread.join(timeout=1.0)
+
+        assert received_messages == [b"high", b"low"]
+
         broker.shutdown()
         thread.join(timeout=1.0)
 

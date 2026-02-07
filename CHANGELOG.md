@@ -7,7 +7,25 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 
 [Unreleased]
 ------------
- 
+
+[0.4.0] - 2026-02-07
+--------------------
+
+### Breaking Changes
+
+- Serialized invocations from previous versions are incompatible.
+- Queues must be recreated with `sync --recreate`
+  to support priority ordering.
+
+### Added
+
+- Priority support for invocations (0-9, default 4).
+  Use the `priority()` context manager to set the priority
+  for invocations created within its scope.
+  Priority propagates to descendent invocations.
+- `sync --recreate` flag to delete and recreate all queues.
+- `Invocation.Submitted` events now include `priority`.
+
 ### Fixed
 
 - The `queueio` CLI entry point was broken
@@ -60,6 +78,8 @@ Thank you to Nick Anderegg for allowing me to use the queueio name for this proj
 - The queuespec syntax to `queue run` to consume multiple queues with shared capacity.
 - `queueio monitor` command to monitor activity in the queueio system.
 
+[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.4.0...HEAD
+[0.4.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.3.0...tag/0.4.0
 [0.3.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.2...tag/0.3.0
 [0.2.2]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.1...tag/0.2.2
 [0.2.1]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.0...tag/0.2.1

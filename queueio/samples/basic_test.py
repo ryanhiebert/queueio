@@ -5,6 +5,7 @@ import pytest
 
 from queueio.invocation import Invocation
 from queueio.queueio import QueueIO
+from queueio.result import Ok
 
 from .basic import yielding
 
@@ -28,6 +29,7 @@ def test_integration():
         try:
             while event := events.get():
                 if event.id == invocation.id:
+                    assert isinstance(event.result, Ok)
                     break
         finally:
             if proc.poll() is None:

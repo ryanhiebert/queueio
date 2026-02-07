@@ -13,6 +13,17 @@ from .event import Event
 from .id import random_id
 from .suspension import Suspension
 
+_priority = ContextVar[int]("priority", default=4)
+
+
+@contextmanager
+def priority(level: int, /):
+    token = _priority.set(level)
+    try:
+        yield
+    finally:
+        _priority.reset(token)
+
 
 @dataclass(eq=False, kw_only=True)
 class Invocation[R](Suspension[R]):
@@ -20,6 +31,7 @@ class Invocation[R](Suspension[R]):
     routine: str
     args: tuple[Any, ...]
     kwargs: dict[str, Any]
+    priority: int = field(default_factory=_priority.get)
 
     __handler = ContextVar[Callable[[Self], Future] | None](
         "Invocation.handler", default=None
@@ -56,6 +68,7 @@ class Invocation[R](Suspension[R]):
                 "routine": self.routine,
                 "args": self.args,
                 "kwargs": self.kwargs,
+                "priority": self.priority,
             }
         ).encode()
 
@@ -67,6 +80,7 @@ class Invocation[R](Suspension[R]):
             routine=data["routine"],
             args=data["args"],
             kwargs=data["kwargs"],
+            priority=data["priority"],
         )
 
     @dataclass(eq=False, kw_only=True, repr=False)
@@ -74,6 +88,7 @@ class Invocation[R](Suspension[R]):
         routine: str
         args: tuple[Any]
         kwargs: dict[str, Any]
+        priority: int
 
     @dataclass(eq=False, kw_only=True)
     class Started(Event): ...

@@ -12,8 +12,15 @@ from queueio.select import select
 
 
 class StubReceiver(Receiver):
-    def __init__(self, *, queues: Iterable[Queue[bytes]], capacity: int):
+    def __init__(
+        self,
+        *,
+        queues: Iterable[dict[int, Queue[bytes]]],
+        priorities: int,
+        capacity: int,
+    ):
         self.__queues = deque(queues)
+        self.__priorities = priorities
         self.__capacity = capacity
         # A bounded semaphore won't work because resume()
         # needs to decrease capacity without blocking
@@ -38,15 +45,21 @@ class StubReceiver(Receiver):
                 queues = list(self.__queues)
                 self.__capacity -= 1
 
+            selectors = []
+            for priority_queues in queues:
+                for p in range(self.__priorities - 1, -1, -1):
+                    selectors.append(priority_queues[p].get.select())
+
             # Wait for a new message without the condition lock
             try:
-                i, value = select([queue.get.select() for queue in queues])
+                i, value = select(selectors)
             except ShutDown:
                 return
 
             with self.__condition:
-                # Cycle past the one that succeeded to do a fair round-robin
-                for _ in range(i + 1):
+                # Determine which named queue won and cycle past it
+                named_queue_index = i // self.__priorities
+                for _ in range(named_queue_index + 1):
                     self.__queues.append(self.__queues.popleft())
                 yield Message(body=value)
 

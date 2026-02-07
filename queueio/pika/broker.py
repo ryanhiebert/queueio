@@ -2,6 +2,7 @@ from threading import Lock
 
 from pika import URLParameters
 from pika.connection import Parameters
+from pika.spec import BasicProperties
 
 from queueio.broker import Broker
 from queueio.queuespec import QueueSpec
@@ -25,11 +26,25 @@ class PikaBroker(Broker):
         self.__shutdown = False
         self.__receivers = set[PikaReceiver]()
 
-    def enqueue(self, body: bytes, /, *, queue: str):
-        self.__channel.publish(exchange="", routing_key=queue, body=body)
+    def enqueue(self, body: bytes, /, *, queue: str, priority: int):
+        self.__channel.publish(
+            exchange="",
+            routing_key=queue,
+            body=body,
+            properties=BasicProperties(priority=priority),
+        )
 
     def create(self, *, queue: str):
-        self.__channel.queue_declare(queue=queue, durable=True)
+        channel = self.__connection.channel()
+        channel.queue_declare(
+            queue=queue, durable=True, arguments={"x-max-priority": 9}
+        )
+        channel.close()
+
+    def delete(self, *, queue: str):
+        channel = self.__connection.channel()
+        channel.delete(queue=queue)
+        channel.close()
 
     def purge(self, *, queue: str):
         self.__channel.purge(queue=queue)

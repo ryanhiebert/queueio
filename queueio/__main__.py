@@ -1,5 +1,7 @@
+from contextlib import suppress
 from typing import Annotated
 
+import typer
 from typer import Argument
 from typer import Typer
 
@@ -97,7 +99,15 @@ def run(
 
 
 @app.command(rich_help_panel="Commands")
-def sync():
+def sync(
+    recreate: Annotated[
+        bool,
+        typer.Option(
+            help="Delete and recreate queues that have incompatible arguments. "
+            "WARNING: This will lose any pending messages in those queues.",
+        ),
+    ] = False,
+):
     """Sync known queues to the broker."""
     queueio = QueueIO()
     try:
@@ -110,9 +120,28 @@ def sync():
         queues = sorted({routine.queue for routine in routines})
 
         print(f"Syncing queues for {len(routines)} routine(s):")
+        if recreate:
+            for queue in queues:
+                print(f"  Recreating queue: {queue}")
+                with suppress(Exception):
+                    queueio.delete(queue=queue)
+
+        failed = []
         for queue in queues:
             print(f"  Ensuring queue exists: {queue}")
-            queueio.create(queue=queue)
+            try:
+                queueio.create(queue=queue)
+            except Exception:
+                failed.append(queue)
+
+        if failed:
+            print(
+                f"\nError: {len(failed)} queue(s) have incompatible arguments: "
+                f"{', '.join(failed)}\n"
+                f"Re-run with --recreate to delete and recreate them.\n"
+                f"WARNING: This will lose any pending messages in those queues."
+            )
+            raise typer.Exit(1)
 
         print(f"Successfully synced {len(queues)} queue(s)")
     finally:

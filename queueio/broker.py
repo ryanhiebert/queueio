@@ -20,13 +20,18 @@ class Broker(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def enqueue(self, body: bytes, /, *, queue: str):
+    def enqueue(self, body: bytes, /, *, queue: str, priority: int):
         """Enqueue a message."""
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
     def create(self, *, queue: str):
         """Create a queue if it doesn't exist."""
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
+    def delete(self, *, queue: str):
+        """Delete a queue."""
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod

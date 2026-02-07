@@ -1,7 +1,9 @@
 from collections.abc import Callable
+from collections.abc import Generator
 from collections.abc import Iterator
 from collections.abc import Mapping
 from concurrent.futures import Future
+from contextlib import contextmanager
 from contextlib import suppress
 from queue import Queue
 from queue import ShutDown
@@ -72,12 +74,26 @@ class ThreadsafeChannel:
     ):
         self.__wait = wait
         self.__channel = channel
+        self.__pending: set[Future] = set()
         self.__messages = Queue[
             tuple[spec.Basic.Deliver, spec.BasicProperties, bytes]
         ]()
-        self.__channel.add_on_close_callback(
-            lambda c, e: self.__messages.shutdown(immediate=True)
-        )
+        self.__channel.add_on_close_callback(self.__on_close)
+
+    def __on_close(self, channel: Channel, reason: Exception):
+        self.__messages.shutdown(immediate=True)
+        for future in self.__pending:
+            if not future.done():
+                future.set_exception(reason)
+
+    @contextmanager
+    def __future[T](self) -> Generator[Future[T]]:
+        future = Future[T]()
+        self.__pending.add(future)
+        try:
+            yield future
+        finally:
+            self.__pending.remove(future)
 
     def queue_declare(
         self,
@@ -88,19 +104,19 @@ class ThreadsafeChannel:
         auto_delete: bool = False,
         arguments: Mapping[str, Any] | None = None,
     ) -> frame.Method[spec.Queue.DeclareOk]:
-        future: Future[frame.Method[spec.Queue.DeclareOk]] = Future()
-        self.__wait(
-            lambda: self.__channel.queue_declare(
-                queue=queue,
-                passive=passive,
-                durable=durable,
-                exclusive=exclusive,
-                auto_delete=auto_delete,
-                arguments=arguments,
-                callback=future.set_result,
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.queue_declare(
+                    queue=queue,
+                    passive=passive,
+                    durable=durable,
+                    exclusive=exclusive,
+                    auto_delete=auto_delete,
+                    arguments=arguments,
+                    callback=future.set_result,
+                )
             )
-        )
-        return future.result()
+            return future.result()
 
     def queue_bind(
         self,
@@ -109,17 +125,17 @@ class ThreadsafeChannel:
         routing_key: str | None = None,
         arguments: Mapping[str, Any] | None = None,
     ) -> frame.Method[spec.Queue.BindOk]:
-        future: Future[frame.Method[spec.Queue.BindOk]] = Future()
-        self.__wait(
-            lambda: self.__channel.queue_bind(
-                queue=queue,
-                exchange=exchange,
-                routing_key=routing_key,
-                arguments=arguments,
-                callback=future.set_result,
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.queue_bind(
+                    queue=queue,
+                    exchange=exchange,
+                    routing_key=routing_key,
+                    arguments=arguments,
+                    callback=future.set_result,
+                )
             )
-        )
-        return future.result()
+            return future.result()
 
     def publish(
         self,
@@ -139,16 +155,25 @@ class ThreadsafeChannel:
             )
         )
 
-    def purge(self, queue: str) -> frame.Method[spec.Queue.PurgeOk]:
-        future: Future[frame.Method[spec.Queue.PurgeOk]] = Future()
-        self.__wait(
-            lambda: self.__channel.queue_purge(
-                queue=queue,
-                callback=future.set_result,
+    def delete(self, queue: str) -> frame.Method[spec.Queue.DeleteOk]:
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.queue_delete(
+                    queue=queue,
+                    callback=future.set_result,
+                )
             )
-        )
+            return future.result()
 
-        return future.result()
+    def purge(self, queue: str) -> frame.Method[spec.Queue.PurgeOk]:
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.queue_purge(
+                    queue=queue,
+                    callback=future.set_result,
+                )
+            )
+            return future.result()
 
     def consume(
         self,
@@ -158,30 +183,31 @@ class ThreadsafeChannel:
         consumer_tag: str | None = None,
         arguments: Mapping[str, Any] | None = None,
     ) -> frame.Method[spec.Basic.ConsumeOk]:
-        future: Future[frame.Method[spec.Basic.ConsumeOk]] = Future()
-
-        self.__wait(
-            lambda: self.__channel.basic_consume(
-                queue=queue,
-                on_message_callback=lambda _, m, p, b: self.__messages.put((m, p, b)),
-                auto_ack=auto_ack,
-                exclusive=exclusive,
-                consumer_tag=consumer_tag,
-                arguments=arguments,
-                callback=future.set_result,
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.basic_consume(
+                    queue=queue,
+                    on_message_callback=lambda _, m, p, b: self.__messages.put(
+                        (m, p, b)
+                    ),
+                    auto_ack=auto_ack,
+                    exclusive=exclusive,
+                    consumer_tag=consumer_tag,
+                    arguments=arguments,
+                    callback=future.set_result,
+                )
             )
-        )
-        return future.result()
+            return future.result()
 
     def cancel(self, consumer_tag: str) -> frame.Method[spec.Basic.CancelOk]:
-        future: Future[frame.Method[spec.Basic.CancelOk]] = Future()
-        self.__wait(
-            lambda: self.__channel.basic_cancel(
-                consumer_tag=consumer_tag,
-                callback=lambda r: future.set_result(r),
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.basic_cancel(
+                    consumer_tag=consumer_tag,
+                    callback=lambda r: future.set_result(r),
+                )
             )
-        )
-        return future.result()
+            return future.result()
 
     def qos(
         self,
@@ -189,16 +215,16 @@ class ThreadsafeChannel:
         prefetch_count: int = 0,
         global_qos: bool = False,
     ) -> frame.Method[spec.Basic.QosOk]:
-        future: Future[frame.Method[spec.Basic.QosOk]] = Future()
-        self.__wait(
-            lambda: self.__channel.basic_qos(
-                prefetch_size=prefetch_size,
-                prefetch_count=prefetch_count,
-                global_qos=global_qos,
-                callback=future.set_result,
+        with self.__future() as future:
+            self.__wait(
+                lambda: self.__channel.basic_qos(
+                    prefetch_size=prefetch_size,
+                    prefetch_count=prefetch_count,
+                    global_qos=global_qos,
+                    callback=future.set_result,
+                )
             )
-        )
-        return future.result()
+            return future.result()
 
     def ack(self, delivery_tag: int = 0, multiple: bool = False):
         self.__wait(

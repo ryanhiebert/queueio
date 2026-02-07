@@ -115,6 +115,9 @@ class QueueIO:
     def create(self, *, queue: str):
         self.__broker.create(queue=queue)
 
+    def delete(self, *, queue: str):
+        self.__broker.delete(queue=queue)
+
     def purge(self, *, queue: str):
         self.__broker.purge(queue=queue)
 
@@ -178,10 +181,13 @@ class QueueIO:
                 routine=invocation.routine,
                 args=invocation.args,
                 kwargs=invocation.kwargs,
+                priority=invocation.priority,
             )
         )
         queue = routine.queue
-        self.__broker.enqueue(invocation.serialize(), queue=queue)
+        self.__broker.enqueue(
+            invocation.serialize(), queue=queue, priority=invocation.priority
+        )
 
     def consume(self, queuespec: QueueSpec, /) -> Consumer:
         return Consumer(

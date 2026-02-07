@@ -7,24 +7,23 @@ from queueio.invocation import Invocation
 from queueio.queueio import QueueIO
 from queueio.result import Ok
 
-from .expanded import irregular
+from .priority import demonstrate_priorities
 
 
 @pytest.mark.timeout(10)
-def test_integration():
-    # Prefers a clean environment and queue
+def test_priority_propagation():
+    """Priority propagates through the full invocation chain."""
     queueio = QueueIO()
 
     with queueio.activate():
-        queueio.create(queue="expanded")
-        queueio.purge(queue="expanded")
+        queueio.create(queue="priority")
+        queueio.purge(queue="priority")
         events = queueio.subscribe({Invocation.Completed})
-        invocation = irregular()
+        invocation = demonstrate_priorities()
         queueio.submit(invocation)
 
-        # 1. Start worker process in the background
         proc = subprocess.Popen(
-            [sys.executable, "-m", "queueio", "run", "expanded=1"],
+            [sys.executable, "-m", "queueio", "run", "priority=2"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -34,11 +33,10 @@ def test_integration():
                     assert isinstance(event.result, Ok)
                     break
         finally:
-            if proc.poll() is None:  # Process is still running
+            if proc.poll() is None:
                 proc.terminate()
                 try:
                     proc.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    # Force kill if it doesn't terminate gracefully
                     proc.kill()
                     proc.wait()

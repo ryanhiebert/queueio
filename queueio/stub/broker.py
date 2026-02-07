@@ -9,8 +9,10 @@ from .receiver import StubReceiver
 
 
 class StubBroker(Broker):
+    __priorities = 10
+
     def __init__(self):
-        self.__queues = dict[str, Queue[bytes]]()
+        self.__queues = dict[str, dict[int, Queue[bytes]]]()
         self.__processing = set[Message]()
         self.__suspended = set[Message]()
         self.__receivers = set[StubReceiver]()
@@ -21,19 +23,24 @@ class StubBroker(Broker):
     def from_uri(cls, uri: str, /):
         return cls()
 
-    def enqueue(self, body: bytes, /, *, queue: str):
+    def enqueue(self, body: bytes, /, *, queue: str, priority: int):
         if queue not in self.__queues:
             raise ValueError(f"Queue '{queue}' does not exist")
-        self.__queues[queue].put(body)
+        self.__queues[queue][priority].put(body)
 
     def create(self, *, queue: str):
-        self.__queues[queue] = Queue[bytes]()
+        self.__queues[queue] = {p: Queue[bytes]() for p in range(self.__priorities)}
+
+    def delete(self, *, queue: str):
+        if queue not in self.__queues:
+            raise ValueError(f"Queue '{queue}' does not exist")
+        del self.__queues[queue]
 
     def purge(self, *, queue: str):
         if queue not in self.__queues:
             raise ValueError(f"Queue '{queue}' does not exist")
         # This doesn't account for active receivers
-        self.__queues[queue] = Queue[bytes]()
+        self.create(queue=queue)
 
     def receive(self, queuespec: QueueSpec, /) -> StubReceiver:
         if not queuespec.queues:
@@ -46,6 +53,7 @@ class StubBroker(Broker):
         receiver = StubReceiver(
             queues=[self.__queues[queue] for queue in queuespec.queues],
             capacity=queuespec.concurrency,
+            priorities=self.__priorities,
         )
         self.__receivers.add(receiver)
         return receiver
@@ -60,8 +68,9 @@ class StubBroker(Broker):
             for receiver in set(self.__receivers):
                 receiver.shutdown()
 
-            for queue in self.__queues.values():
-                queue.shutdown(immediate=True)
+            for priority_queues in self.__queues.values():
+                for queue in priority_queues.values():
+                    queue.shutdown(immediate=True)
 
             self.__queues.clear()
             self.__processing.clear()

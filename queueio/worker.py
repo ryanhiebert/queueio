@@ -7,6 +7,7 @@ from threading import Timer
 
 from .continuation import Continuation
 from .invocation import Invocation
+from .invocation import priority
 from .queue import Queue
 from .queue import ShutDown
 from .queueio import QueueIO
@@ -190,7 +191,8 @@ class Worker:
         """Process an invocation task."""
         routine = self.__queueio.routine(invocation.routine)
         try:
-            result = routine.fn(*invocation.args, **invocation.kwargs)
+            with priority(invocation.priority):
+                result = routine.fn(*invocation.args, **invocation.kwargs)
         except Exception as exception:
             self.__consumer.error(invocation, exception)
         else:
@@ -211,7 +213,8 @@ class Worker:
         method = continuation.resume
 
         try:
-            suspension = method()
+            with priority(continuation.invocation.priority):
+                suspension = method()
         except StopIteration as stop:
             self.__consumer.succeed(continuation.invocation, stop.value)
         except Exception as exception:
