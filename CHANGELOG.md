@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 
+[0.3.0] - 2026-02-06
+--------------------
+
+### Added
+
+- The journal now uses a threadsafe pika connection,
+  rather than guarding a blocking connection.
+- The integration tests and examples have better queue names.
+
 [0.2.2] - 2025-11-23
 --------------------
 
@@ -43,6 +52,7 @@ Thank you to Nick Anderegg for allowing me to use the queueio name for this proj
 - The queuespec syntax to `queue run` to consume multiple queues with shared capacity.
 - `queueio monitor` command to monitor activity in the queueio system.
 
+[0.3.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.2...tag/0.3.0
 [0.2.2]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.1...tag/0.2.2
 [0.2.1]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.0...tag/0.2.1
 [0.2.0]: https://github.com/ryanhiebert/queueio/releases/tag/0.2.0
