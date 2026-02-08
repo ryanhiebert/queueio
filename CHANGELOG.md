@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 
+[Unreleased]
+------------
+ 
+### Fixed
+
+- The `queueio` CLI entry point was broken
+  by a build configuration that excluded the package source.
+
 [0.3.0] - 2026-02-06
 --------------------
 

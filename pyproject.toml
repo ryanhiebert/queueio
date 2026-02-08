@@ -61,9 +61,6 @@ timeout = 30
 branch = true
 source = ["queueio"]
 
-[tool.hatch.build]
-include = ["logo.svg"]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

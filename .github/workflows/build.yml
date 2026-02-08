@@ -36,3 +36,7 @@ jobs:
       - name: Run tests
         run: uv run pytest
         timeout-minutes: 2
+      - name: Verify built package
+        run: |
+          uv build
+          uvx --from dist/queueio-*.whl queueio --help
