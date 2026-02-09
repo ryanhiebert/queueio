@@ -3,11 +3,11 @@ from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import wait
 from contextlib import suppress
+from contextvars import copy_context
 from threading import Timer
 
 from .continuation import Continuation
 from .invocation import Invocation
-from .invocation import priority
 from .queue import Queue
 from .queue import ShutDown
 from .queueio import QueueIO
@@ -105,6 +105,7 @@ class Worker:
                         invocation=event.invocation,
                         generator=event.generator,
                         result=Ok(None),
+                        context=event.context,
                     )
                     # Replace ``new`` before setting the result
                     # to avoid short busy wait loops.
@@ -144,6 +145,7 @@ class Worker:
                                 invocation=continuation.invocation,
                                 generator=continuation.generator,
                                 result=Err(exception),
+                                context=continuation.context,
                             )
                         )
                 else:
@@ -156,6 +158,7 @@ class Worker:
                                 invocation=continuation.invocation,
                                 generator=continuation.generator,
                                 result=Ok(value),
+                                context=continuation.context,
                             ),
                         )
 
@@ -190,9 +193,10 @@ class Worker:
     def __run_invocation(self, invocation: Invocation):
         """Process an invocation task."""
         routine = self.__queueio.routine(invocation.routine)
+        ctx = copy_context()
+        invocation.context.load(ctx)
         try:
-            with priority(invocation.priority):
-                result = routine.fn(*invocation.args, **invocation.kwargs)
+            result = ctx.run(routine.fn, *invocation.args, **invocation.kwargs)
         except Exception as exception:
             self.__consumer.error(invocation, exception)
         else:
@@ -203,6 +207,7 @@ class Worker:
                         invocation=invocation,
                         generator=generator,
                         result=Ok(None),
+                        context=ctx,
                     )
                 )
             else:
@@ -213,15 +218,17 @@ class Worker:
         method = continuation.resume
 
         try:
-            with priority(continuation.invocation.priority):
-                suspension = method()
+            suspension = continuation.context.run(method)
         except StopIteration as stop:
             self.__consumer.succeed(continuation.invocation, stop.value)
         except Exception as exception:
             self.__consumer.error(continuation.invocation, exception)
         else:
             self.__consumer.suspend(
-                continuation.invocation, continuation.generator, suspension
+                continuation.invocation,
+                continuation.generator,
+                suspension,
+                continuation.context,
             )
 
     def stop(self):

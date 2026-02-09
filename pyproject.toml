@@ -1,6 +1,6 @@
 [project]
 name = "queueio"
-version = "0.4.0"
+version = "0.5.0"
 description = "Python background queues with an async twist"
 readme = "README.md"
 license = "MIT"
@@ -52,6 +52,7 @@ register = [
     "queueio.samples.basic",
     "queueio.samples.expanded",
     "queueio.samples.priority",
+    "queueio.samples.queuevar",
 ]
 pika = "amqp://localhost:5672"
 

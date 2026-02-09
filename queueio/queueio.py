@@ -17,12 +17,15 @@ from .message import Message
 from .queue import Queue
 from .queue import ShutDown
 from .queuespec import QueueSpec
+from .queuevar import QueueVar
 from .registry import ROUTINE_REGISTRY
 from .result import Err
 from .result import Ok
 from .routine import Routine
 from .stream import Stream
 from .thread import Thread
+
+priority: QueueVar[int] = QueueVar("priority", default=4)
 
 
 class QueueIO:
@@ -181,12 +184,14 @@ class QueueIO:
                 routine=invocation.routine,
                 args=invocation.args,
                 kwargs=invocation.kwargs,
-                priority=invocation.priority,
+                context=invocation.context,
             )
         )
         queue = routine.queue
         self.__broker.enqueue(
-            invocation.serialize(), queue=queue, priority=invocation.priority
+            invocation.serialize(),
+            queue=queue,
+            priority=invocation.context.get(priority, priority.get()),
         )
 
     def consume(self, queuespec: QueueSpec, /) -> Consumer:

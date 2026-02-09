@@ -2,6 +2,7 @@ from collections.abc import Callable
 from collections.abc import Generator
 from collections.abc import Iterable
 from collections.abc import Iterator
+from contextvars import Context
 from typing import Any
 
 from .invocation import Invocation
@@ -41,6 +42,7 @@ class Consumer(Iterable[Invocation]):
         invocation: Invocation,
         generator: Generator,
         suspension: Suspension | None,
+        context: Context,
     ):
         """Signal that the invocation has suspended."""
         if suspension:
@@ -51,6 +53,7 @@ class Consumer(Iterable[Invocation]):
                     suspension=suspension,
                     invocation=invocation,
                     generator=generator,
+                    context=context,
                 )
             )
         self.__receiver.pause(self.__invocations[invocation])

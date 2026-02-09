@@ -8,6 +8,24 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+[0.5.0] - 2026-02-08
+--------------------
+
+### Breaking Changes
+
+- `invocation.priority` removed;
+  use `invocation.context[priority]` instead.
+- `Invocation.Submitted.priority` replaced with `context`.
+- Serialized invocations from previous versions are incompatible.
+
+### Added
+
+- `QueueVar` for user-defined serializable context variables
+  that propagate across queue boundaries.
+- `QueueContext` mapping to access captured context on invocations.
+- `priority` is now a `QueueVar` instance
+  (same context manager syntax as before).
+
 [0.4.0] - 2026-02-07
 --------------------
 
@@ -78,7 +96,8 @@ Thank you to Nick Anderegg for allowing me to use the queueio name for this proj
 - The queuespec syntax to `queue run` to consume multiple queues with shared capacity.
 - `queueio monitor` command to monitor activity in the queueio system.
 
-[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.4.0...HEAD
+[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.5.0...HEAD
+[0.5.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.4.0...tag/0.5.0
 [0.4.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.3.0...tag/0.4.0
 [0.3.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.2...tag/0.3.0
 [0.2.2]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.1...tag/0.2.2

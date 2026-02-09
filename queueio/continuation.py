@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from collections.abc import Generator
+from contextvars import Context
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
@@ -17,6 +18,7 @@ class Continuation[T: Callable[..., Any] = Callable[..., Any]]:
     invocation: Invocation
     generator: Generator[Invocation, Any, Any]
     result: Result[Any, BaseException]
+    context: Context
 
     def resume(self) -> Any:
         match self.result:
