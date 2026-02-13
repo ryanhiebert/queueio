@@ -1,4 +1,4 @@
-Principles
+Philosophy
 ==========
 
 There's been a great deal of momentum to embrace async functions for IO,
