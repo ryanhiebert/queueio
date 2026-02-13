@@ -1,0 +1,7 @@
+.md-header__topic {
+    display: none;
+}
+
+.md-nav--primary > .md-nav__title {
+    display: none;
+}

@@ -1,0 +1,47 @@
+<script>
+  (function () {
+    // Remove any cached palette so Material always re-evaluates media queries
+    try {
+      var key = __md_scope.pathname + ".__palette";
+      localStorage.removeItem(key);
+    } catch (e) {}
+
+    // Prevent Material from persisting palette choices
+    var origSet = __md_set;
+    __md_set = function (k) {
+      if (k === "__palette") return;
+      return origSet.apply(this, arguments);
+    };
+
+    function apply() {
+      var inputs = document.querySelectorAll("[data-md-color-media]");
+      for (var i = 0; i < inputs.length; i++) {
+        var media = inputs[i].getAttribute("data-md-color-media");
+        if (media && matchMedia(media).matches) {
+          document.body.setAttribute(
+            "data-md-color-scheme",
+            inputs[i].getAttribute("data-md-color-scheme"),
+          );
+          document.body.setAttribute(
+            "data-md-color-primary",
+            inputs[i].getAttribute("data-md-color-primary"),
+          );
+          document.body.setAttribute(
+            "data-md-color-accent",
+            inputs[i].getAttribute("data-md-color-accent"),
+          );
+          break;
+        }
+      }
+    }
+
+    if (document.body) apply();
+    document.addEventListener("DOMContentLoaded", apply);
+
+    // Listen on both light and dark queries for maximum compatibility
+    var dark = matchMedia("(prefers-color-scheme: dark)");
+    var light = matchMedia("(prefers-color-scheme: light)");
+    dark.addEventListener("change", apply);
+    light.addEventListener("change", apply);
+  })();
+</script>

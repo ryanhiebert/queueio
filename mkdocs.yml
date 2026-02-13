@@ -1,0 +1,39 @@
+site_name: queueio
+site_description: Python background queues with an async twist
+site_url: https://queueio.dev/
+repo_url: https://github.com/ryanhiebert/queueio
+repo_name: ryanhiebert/queueio
+
+docs_dir: .
+
+theme:
+  name: material
+  custom_dir: docs_overrides
+  logo: assets/images/logo.svg
+  favicon: assets/images/favicon.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+plugins:
+  - search
+  - same-dir
+
+nav:
+  - Home: README.md
+  - Principles: principles.md
+  - Invocation: invocation.md
+  - QueueSpec: queueio/queuespec.md
+  - QueueVar: queueio/queuevar.md
+  - Changelog: CHANGELOG.md

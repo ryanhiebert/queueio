@@ -8,6 +8,10 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+### Added
+
+- Documentation site.
+
 [0.5.0] - 2026-02-08
 --------------------
 
