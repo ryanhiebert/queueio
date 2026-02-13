@@ -33,7 +33,7 @@ plugins:
 nav:
   - Home: README.md
   - Principles: principles.md
-  - Invocation: invocation.md
+  - Invocation: queueio/invocation.md
   - QueueSpec: queueio/queuespec.md
   - QueueVar: queueio/queuevar.md
   - Changelog: CHANGELOG.md
