@@ -1,6 +1,6 @@
 [project]
 name = "queueio"
-version = "0.5.0"
+version = "0.6.0"
 description = "Python background queues with an async twist"
 readme = "README.md"
 license = "MIT"
@@ -27,12 +27,21 @@ dependencies = [
     "typer>=0.15.4",
 ]
 
+[project.optional-dependencies]
+django = ["django>=6.0", "django-cmd>=3.0"]
+
+[project.entry-points.djp]
+queueio = "queueio.django.djp"
+
 [project.scripts]
 queueio = "queueio.__main__:app"
 
 [dependency-groups]
 dev = [
     "basedpyright>=1.32.1",
+    "django-extensions",
+    "djp",
+    "queueio[django]",
     "mkdocs-material>=9.7.1",
     "mkdocs-same-dir>=0.1.3",
     "pytest>=8.4.1",
@@ -60,6 +69,7 @@ pika = "amqp://localhost:5672"
 
 [tool.pytest.ini_options]
 timeout = 30
+norecursedirs = ["site"]
 
 [tool.coverage.run]
 branch = true

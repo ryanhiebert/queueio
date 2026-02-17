@@ -22,7 +22,7 @@ def test_all_queueio_modules_preserve_freethreading():
     for _, modname, _ in pkgutil.walk_packages(
         queueio.__path__, f"{queueio.__name__}."
     ):
-        if not modname.endswith("_test"):
+        if not modname.endswith("_test") and ".django" not in modname:
             importlib.import_module(modname)
 
     assert sys._is_gil_enabled() is False

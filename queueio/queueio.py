@@ -11,6 +11,7 @@ from typing import Self
 
 from .broker import Broker
 from .consumer import Consumer
+from .django import setup as _django_setup
 from .invocation import Invocation
 from .journal import Journal
 from .message import Message
@@ -105,6 +106,9 @@ class QueueIO:
 
     def __register_routines(self):
         """Load routine modules from pyproject.toml."""
+        for hook in [_django_setup]:
+            hook()
+
         config = self.__config()
         modules = config.get("register", [])
 

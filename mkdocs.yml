@@ -20,6 +20,7 @@ theme:
       primary: black
 
 markdown_extensions:
+  - admonition
   - pymdownx.highlight
   - pymdownx.superfences
 
@@ -36,4 +37,5 @@ nav:
   - Invocation: queueio/invocation.md
   - QueueSpec: queueio/queuespec.md
   - QueueVar: queueio/queuevar.md
+  - Django: queueio/django.md
   - Changelog: CHANGELOG.md

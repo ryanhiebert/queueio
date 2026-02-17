@@ -8,8 +8,14 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+[0.6.0] - 2026-02-16
+--------------------
+
 ### Added
 
+- Django integration (`queueio.django`) with `runserver` lifecycle management.
+- [djp](https://djp.readthedocs.io/) support for automatic `INSTALLED_APPS` registration.
+- [django-cmd](https://pypi.org/project/django-cmd/) integration for settings discovery.
 - Documentation site.
 
 [0.5.0] - 2026-02-08
@@ -100,7 +106,8 @@ Thank you to Nick Anderegg for allowing me to use the queueio name for this proj
 - The queuespec syntax to `queue run` to consume multiple queues with shared capacity.
 - `queueio monitor` command to monitor activity in the queueio system.
 
-[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.5.0...HEAD
+[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.6.0...HEAD
+[0.6.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.5.0...tag/0.6.0
 [0.5.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.4.0...tag/0.5.0
 [0.4.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.3.0...tag/0.4.0
 [0.3.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.2.2...tag/0.3.0
