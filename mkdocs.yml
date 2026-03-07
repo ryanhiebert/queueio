@@ -37,5 +37,5 @@ nav:
   - Invocation: queueio/invocation.md
   - QueueSpec: queueio/queuespec.md
   - QueueVar: queueio/queuevar.md
-  - Django: queueio/django.md
+  - Django: queueio/django/README.md
   - Changelog: CHANGELOG.md
