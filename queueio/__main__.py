@@ -108,7 +108,15 @@ def sync(
         ),
     ] = False,
 ):
-    """Sync known queues to the broker."""
+    """Sync known queues to the broker.
+
+    Planned flags:
+    - (default) ensure everything needed exists
+    - --repair: rebuild only what's broken
+    - --recreate: tear down and rebuild everything we know about
+    - --prune: remove what's not needed
+    - --plan: show what would happen without doing it
+    """
     queueio = QueueIO()
     try:
         routines = queueio.routines()
