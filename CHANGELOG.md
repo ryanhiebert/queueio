@@ -8,6 +8,18 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+### Breaking Changes
+
+- Removed `Broker.create(queue)`, in favor of `Broker.sync([queue])`.
+- Removed `Broker.delete(queue)`, without replacement.
+- Removed `QueueIO.create(queue)`, in favor of `QueueIO.sync([queue])`.
+- Removed `QueueIO.delete(queue)`, without replacement.
+
+### Added
+
+- Added `Broker.sync()` to back `queueio sync`.
+- Added `QueueIO.sync()` to back `queueio sync`.
+
 [0.6.0] - 2026-02-16
 --------------------
 

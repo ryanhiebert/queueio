@@ -1,5 +1,6 @@
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import Iterable
 
 from .queuespec import QueueSpec
 from .receiver import Receiver
@@ -20,18 +21,17 @@ class Broker(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
+    def sync(self, queues: Iterable[str], *, recreate: bool = False):
+        """Ensure the given queues are ready to use.
+
+        If recreate is True, destroy and recreate all resources,
+        losing any pending messages.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
     def enqueue(self, body: bytes, /, *, queue: str, priority: int):
         """Enqueue a message."""
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def create(self, *, queue: str):
-        """Create a queue if it doesn't exist."""
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def delete(self, *, queue: str):
-        """Delete a queue."""
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod

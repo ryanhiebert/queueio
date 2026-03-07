@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import Annotated
 
 import typer
@@ -103,20 +102,12 @@ def sync(
     recreate: Annotated[
         bool,
         typer.Option(
-            help="Delete and recreate queues that have incompatible arguments. "
-            "WARNING: This will lose any pending messages in those queues.",
+            help="Recreate all resources for the broker and journal. "
+            "WARNING: This will lose pending messages.",
         ),
     ] = False,
 ):
-    """Sync known queues to the broker.
-
-    Planned flags:
-    - (default) ensure everything needed exists
-    - --repair: rebuild only what's broken
-    - --recreate: tear down and rebuild everything we know about
-    - --prune: remove what's not needed
-    - --plan: show what would happen without doing it
-    """
+    """Sync resources for the broker and journal."""
     queueio = QueueIO()
     try:
         routines = queueio.routines()
@@ -127,29 +118,19 @@ def sync(
 
         queues = sorted({routine.queue for routine in routines})
 
-        print(f"Syncing queues for {len(routines)} routine(s):")
-        if recreate:
-            for queue in queues:
-                print(f"  Recreating queue: {queue}")
-                with suppress(Exception):
-                    queueio.delete(queue=queue)
-
-        failed = []
+        print(f"Discovered queues for {len(routines)} routine(s):")
         for queue in queues:
-            print(f"  Ensuring queue exists: {queue}")
-            try:
-                queueio.create(queue=queue)
-            except Exception:
-                failed.append(queue)
+            print(f"  {queue}")
 
-        if failed:
+        try:
+            queueio.sync(queues, recreate=recreate)
+        except Exception:
             print(
-                f"\nError: {len(failed)} queue(s) have incompatible arguments: "
-                f"{', '.join(failed)}\n"
-                f"Re-run with --recreate to delete and recreate them.\n"
-                f"WARNING: This will lose any pending messages in those queues."
+                "\nError: Failed to sync resources.\n"
+                "Re-run with --recreate to recreate them.\n"
+                "WARNING: This will lose pending messages."
             )
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
         print(f"Successfully synced {len(queues)} queue(s)")
     finally:

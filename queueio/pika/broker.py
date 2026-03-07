@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+from contextlib import suppress
 from threading import Lock
 
 from pika import URLParameters
@@ -26,6 +28,19 @@ class PikaBroker(Broker):
         self.__shutdown = False
         self.__receivers = set[PikaReceiver]()
 
+    def sync(self, queues: Iterable[str], *, recreate: bool = False):
+        channel = self.__connection.channel()
+        try:
+            for queue in queues:
+                if recreate:
+                    with suppress(Exception):
+                        channel.delete(queue=queue)
+                channel.queue_declare(
+                    queue=queue, durable=True, arguments={"x-max-priority": 9}
+                )
+        finally:
+            channel.close()
+
     def enqueue(self, body: bytes, /, *, queue: str, priority: int):
         self.__channel.publish(
             exchange="",
@@ -33,18 +48,6 @@ class PikaBroker(Broker):
             body=body,
             properties=BasicProperties(priority=priority),
         )
-
-    def create(self, *, queue: str):
-        channel = self.__connection.channel()
-        channel.queue_declare(
-            queue=queue, durable=True, arguments={"x-max-priority": 9}
-        )
-        channel.close()
-
-    def delete(self, *, queue: str):
-        channel = self.__connection.channel()
-        channel.delete(queue=queue)
-        channel.close()
 
     def purge(self, *, queue: str):
         self.__channel.purge(queue=queue)

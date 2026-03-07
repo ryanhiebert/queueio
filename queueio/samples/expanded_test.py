@@ -16,7 +16,7 @@ def test_integration():
     queueio = QueueIO()
 
     with queueio.activate():
-        queueio.create(queue="expanded")
+        queueio.sync(["expanded"])
         queueio.purge(queue="expanded")
         events = queueio.subscribe({Invocation.Completed})
         invocation = irregular()

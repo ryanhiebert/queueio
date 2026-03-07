@@ -15,7 +15,7 @@ def test_integration():
     queueio = QueueIO()
 
     with queueio.activate():
-        queueio.create(queue="basic")
+        queueio.sync(["basic"])
         queueio.purge(queue="basic")
         events = queueio.subscribe({Invocation.Completed})
         invocation = yielding(7)

@@ -119,11 +119,8 @@ class QueueIO:
         with self.invocation_handler():
             return invocation.submit().result()
 
-    def create(self, *, queue: str):
-        self.__broker.create(queue=queue)
-
-    def delete(self, *, queue: str):
-        self.__broker.delete(queue=queue)
+    def sync(self, queues: Iterable[str], *, recreate: bool = False):
+        self.__broker.sync(queues, recreate=recreate)
 
     def purge(self, *, queue: str):
         self.__broker.purge(queue=queue)

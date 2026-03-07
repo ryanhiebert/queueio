@@ -16,7 +16,7 @@ def test_queuevar_propagation():
     queueio = QueueIO()
 
     with queueio.activate():
-        queueio.create(queue="queuevar")
+        queueio.sync(["queuevar"])
         queueio.purge(queue="queuevar")
         events = queueio.subscribe({Invocation.Completed})
         invocation = demonstrate_queuevar()

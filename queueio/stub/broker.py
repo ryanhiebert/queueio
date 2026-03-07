@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from threading import Lock
 
 from queueio.broker import Broker
@@ -23,24 +24,23 @@ class StubBroker(Broker):
     def from_uri(cls, uri: str, /):
         return cls()
 
+    def sync(self, queues: Iterable[str], *, recreate: bool = False):
+        # Always recreate, because the state isn't persistent
+        self.__queues = {
+            queue: {p: Queue[bytes]() for p in range(self.__priorities)}
+            for queue in queues
+        }
+
     def enqueue(self, body: bytes, /, *, queue: str, priority: int):
         if queue not in self.__queues:
             raise ValueError(f"Queue '{queue}' does not exist")
         self.__queues[queue][priority].put(body)
 
-    def create(self, *, queue: str):
-        self.__queues[queue] = {p: Queue[bytes]() for p in range(self.__priorities)}
-
-    def delete(self, *, queue: str):
-        if queue not in self.__queues:
-            raise ValueError(f"Queue '{queue}' does not exist")
-        del self.__queues[queue]
-
     def purge(self, *, queue: str):
         if queue not in self.__queues:
             raise ValueError(f"Queue '{queue}' does not exist")
         # This doesn't account for active receivers
-        self.create(queue=queue)
+        self.__queues[queue] = {p: Queue[bytes]() for p in range(self.__priorities)}
 
     def receive(self, queuespec: QueueSpec, /) -> StubReceiver:
         if not queuespec.queues:

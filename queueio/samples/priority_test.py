@@ -16,7 +16,7 @@ def test_priority_propagation():
     queueio = QueueIO()
 
     with queueio.activate():
-        queueio.create(queue="priority")
+        queueio.sync(["priority"])
         queueio.purge(queue="priority")
         events = queueio.subscribe({Invocation.Completed})
         invocation = demonstrate_priorities()

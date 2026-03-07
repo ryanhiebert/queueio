@@ -17,7 +17,7 @@ def test_queueio_with_custom_broker_and_journal():
 
     try:
         # Test purge (uses broker)
-        queueio.create(queue="queueio")
+        queueio.sync(["queueio"])
         queueio.purge(queue="queueio")
 
         # Test subscriptions (uses journal)
@@ -40,9 +40,9 @@ def test_different_queueio_instances_are_independent():
 
     try:
         # Both should work independently
-        queueio1.create(queue="queueio")
+        queueio1.sync(["queueio"])
         queueio1.purge(queue="queueio")
-        queueio2.create(queue="queueio")
+        queueio2.sync(["queueio"])
         queueio2.purge(queue="queueio")
 
         # Test that they can have independent subscriptions
@@ -86,7 +86,7 @@ def test_queueio_loads_configuration_from_pyproject(tmp_path):
         queueio = QueueIO()
         try:
             # Should be able to perform basic operations
-            queueio.create(queue="test")
+            queueio.sync(["test"])
             queueio.purge(queue="test")
             events = queueio.subscribe({object})
             queueio.unsubscribe(events)
@@ -136,9 +136,9 @@ def test_queueio_allows_pika_override(tmp_path):
 
         try:
             # Both should work
-            queueio1.create(queue="test")
+            queueio1.sync(["test"])
             queueio1.purge(queue="test")
-            queueio2.create(queue="test")
+            queueio2.sync(["test"])
             queueio2.purge(queue="test")
         finally:
             queueio1.shutdown()
@@ -209,7 +209,7 @@ def test_queueio_with_valid_config(tmp_path):
         queueio = QueueIO()
         try:
             # Should load configuration successfully
-            queueio.create(queue="test")
+            queueio.sync(["test"])
             queueio.purge(queue="test")
             routines = queueio.routines()
             routine_names = {routine.name for routine in routines}
@@ -327,7 +327,7 @@ def test_queueio_with_uri_broker_config(tmp_path):
         queueio = QueueIO()
         try:
             # Should work with URI configuration
-            queueio.create(queue="test")
+            queueio.sync(["test"])
             queueio.purge(queue="test")
         finally:
             queueio.shutdown()
@@ -367,7 +367,7 @@ def test_queueio_with_uri_journal_config(tmp_path):
         queueio = QueueIO()
         try:
             # Should work with URI configuration
-            queueio.create(queue="test")
+            queueio.sync(["test"])
             queueio.purge(queue="test")
         finally:
             queueio.shutdown()
@@ -407,7 +407,7 @@ def test_queueio_with_both_uri_configs(tmp_path):
         queueio = QueueIO()
         try:
             # Should work with both URI configurations
-            queueio.create(queue="test")
+            queueio.sync(["test"])
             queueio.purge(queue="test")
         finally:
             queueio.shutdown()
@@ -488,7 +488,7 @@ def test_queueio_with_environment_variable(tmp_path, monkeypatch):
         queueio = QueueIO()
         try:
             # Should work with environment variables taking precedence
-            queueio.create(queue="test")
+            queueio.sync(["test"])
             queueio.purge(queue="test")
         finally:
             queueio.shutdown()
