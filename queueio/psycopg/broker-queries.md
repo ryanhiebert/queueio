@@ -2,6 +2,19 @@
 
 Scratchpad for working out the SQL needed to implement the Broker interface.
 
+We're Python 3.14 exclusive, so we'll use psycopg's t-string support
+for queries. T-strings let us embed parameters directly in the SQL
+with safe interpolation, avoiding positional placeholders:
+
+```python
+cursor.execute(t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})")
+
+# For identifiers (table/column names), use :i
+cursor.execute(t"NOTIFY {channel:i}, {payload:l}")
+```
+
+See: https://www.psycopg.org/psycopg3/docs/basic/tstrings.html
+
 ## Schema
 
 Before any queries, we need tables. Open questions marked with (?).
@@ -40,18 +53,15 @@ Open questions:
 
 Insert a task into the queue.
 
-```sql
-INSERT INTO queueio_tasks (queue, body, priority)
-VALUES (:queue, :body, :priority);
+```python
+cursor.execute(t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})")
 ```
 
-Straightforward. Might also want to `NOTIFY` here to wake up consumers:
+Might also want to `NOTIFY` here to wake up consumers:
 
-```sql
-INSERT INTO queueio_tasks (queue, body, priority)
-VALUES (:queue, :body, :priority);
-
-NOTIFY queueio, :queue;
+```python
+cursor.execute(t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})")
+cursor.execute(t"NOTIFY queueio, {queue:l}")
 ```
 
 Open question: Can we combine the INSERT and NOTIFY in a single round trip?
@@ -59,33 +69,30 @@ psycopg can pipeline or use `execute` with multiple statements, but NOTIFY
 isn't part of the INSERT. Might need two statements in one transaction.
 
 
-## `create(*, queue)`
+## `sync(queues, *, recreate)`
 
-Create a queue (idempotent).
+Ensure queues exist. With `recreate=True`, destroy and recreate all
+resources, losing any pending messages.
 
-```sql
-INSERT INTO queueio_queues (name)
-VALUES (:queue)
-ON CONFLICT (name) DO NOTHING;
+```python
+for queue in queues:
+    if recreate:
+        cursor.execute(t"DELETE FROM queueio_tasks WHERE queue = {queue}")
+        cursor.execute(t"DELETE FROM queueio_queues WHERE name = {queue}")
+    cursor.execute(
+        t"INSERT INTO queueio_queues (name) VALUES ({queue}) ON CONFLICT (name) DO NOTHING"
+    )
 ```
 
-Portable: `ON CONFLICT DO NOTHING` is PostgreSQL-specific.
-MySQL equivalent: `INSERT IGNORE INTO ...`
+With `ON DELETE CASCADE` on the foreign key, the recreate path simplifies:
 
-
-## `delete(*, queue)`
-
-Delete a queue and all its tasks.
-
-```sql
-DELETE FROM queueio_tasks WHERE queue = :queue;
-DELETE FROM queueio_queues WHERE name = :queue;
-```
-
-Or with `ON DELETE CASCADE` on the foreign key, just:
-
-```sql
-DELETE FROM queueio_queues WHERE name = :queue;
+```python
+for queue in queues:
+    if recreate:
+        cursor.execute(t"DELETE FROM queueio_queues WHERE name = {queue}")
+    cursor.execute(
+        t"INSERT INTO queueio_queues (name) VALUES ({queue}) ON CONFLICT (name) DO NOTHING"
+    )
 ```
 
 
@@ -93,8 +100,8 @@ DELETE FROM queueio_queues WHERE name = :queue;
 
 Remove all tasks from a queue without deleting the queue itself.
 
-```sql
-DELETE FROM queueio_tasks WHERE queue = :queue;
+```python
+cursor.execute(t"DELETE FROM queueio_tasks WHERE queue = {queue}")
 ```
 
 
