@@ -140,7 +140,9 @@ class QueueIO:
                 )
             if not (uri.startswith("postgresql:") or uri.startswith("postgres:")):
                 raise ValueError(f"URI scheme must be 'postgresql:', got: {uri}")
-            raise ValueError("Journal backend 'psycopg' is not yet implemented.")
+            from .psycopg.journal import PsycopgJournal
+
+            return PsycopgJournal.from_uri(uri)
 
         raise ValueError(f"Unknown journal backend: {backend}")
 
