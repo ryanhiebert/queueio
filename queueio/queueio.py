@@ -75,34 +75,74 @@ class QueueIO:
         return {}
 
     def __default_broker(self) -> Broker:
-        pika_uri = self.__get_pika_uri()
+        config = self.__config()
 
-        from .pika.broker import PikaBroker
+        backend = os.environ.get("QUEUEIO_BROKER") or config.get("broker") or "pika"
+        if backend not in ("pika", "psycopg"):
+            raise ValueError(
+                f"Invalid broker backend '{backend}'. Must be 'pika' or 'psycopg'."
+            )
 
-        return PikaBroker.from_uri(pika_uri)
+        if backend == "pika":
+            uri = os.environ.get("QUEUEIO_PIKA") or config.get("pika")
+            if not uri:
+                raise ValueError(
+                    "Pika broker selected but no URI configured. "
+                    "Set QUEUEIO_PIKA env var or 'pika' in [tool.queueio]."
+                )
+            if not uri.startswith("amqp:"):
+                raise ValueError(f"URI scheme must be 'amqp:', got: {uri}")
+            from .pika.broker import PikaBroker
+
+            return PikaBroker.from_uri(uri)
+
+        if backend == "psycopg":
+            uri = os.environ.get("QUEUEIO_PSYCOPG") or config.get("psycopg")
+            if not uri:
+                raise ValueError(
+                    "Psycopg broker selected but no URI configured. "
+                    "Set QUEUEIO_PSYCOPG env var or 'psycopg' in [tool.queueio]."
+                )
+            if not (uri.startswith("postgresql:") or uri.startswith("postgres:")):
+                raise ValueError(f"URI scheme must be 'postgresql:', got: {uri}")
+            raise ValueError("Broker backend 'psycopg' is not yet implemented.")
+
+        raise ValueError(f"Unknown broker backend: {backend}")
 
     def __default_journal(self) -> Journal:
-        pika_uri = self.__get_pika_uri()
+        config = self.__config()
 
-        from .pika.journal import PikaJournal
+        backend = os.environ.get("QUEUEIO_JOURNAL") or config.get("journal") or "pika"
+        if backend not in ("pika", "psycopg"):
+            raise ValueError(
+                f"Invalid journal backend '{backend}'. Must be 'pika' or 'psycopg'."
+            )
 
-        return PikaJournal.from_uri(pika_uri)
-
-    def __get_pika_uri(self) -> str:
-        pika_uri = os.environ.get("QUEUEIO_PIKA")
-        if not pika_uri:
-            config = self.__config()
-            pika_uri = config.get("pika")
-            if not pika_uri:
+        if backend == "pika":
+            uri = os.environ.get("QUEUEIO_PIKA") or config.get("pika")
+            if not uri:
                 raise ValueError(
-                    "No pika URI configured. Set QUEUEIO_PIKA env var "
-                    "or add 'pika' to [tool.queueio] in pyproject.toml"
+                    "Pika journal selected but no URI configured. "
+                    "Set QUEUEIO_PIKA env var or 'pika' in [tool.queueio]."
                 )
+            if not uri.startswith("amqp:"):
+                raise ValueError(f"URI scheme must be 'amqp:', got: {uri}")
+            from .pika.journal import PikaJournal
 
-        if not pika_uri.startswith("amqp:"):
-            raise ValueError(f"URI scheme must be 'amqp:', got: {pika_uri}")
+            return PikaJournal.from_uri(uri)
 
-        return pika_uri
+        if backend == "psycopg":
+            uri = os.environ.get("QUEUEIO_PSYCOPG") or config.get("psycopg")
+            if not uri:
+                raise ValueError(
+                    "Psycopg journal selected but no URI configured. "
+                    "Set QUEUEIO_PSYCOPG env var or 'psycopg' in [tool.queueio]."
+                )
+            if not (uri.startswith("postgresql:") or uri.startswith("postgres:")):
+                raise ValueError(f"URI scheme must be 'postgresql:', got: {uri}")
+            raise ValueError("Journal backend 'psycopg' is not yet implemented.")
+
+        raise ValueError(f"Unknown journal backend: {backend}")
 
     def __register_routines(self):
         """Load routine modules from pyproject.toml."""

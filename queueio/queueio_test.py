@@ -259,165 +259,6 @@ def test_queueio_with_invalid_config(tmp_path):
         ROUTINE_REGISTRY.update(original_registry)
 
 
-def test_queueio_with_invalid_journal_config(tmp_path):
-    """QueueIO fails with unknown journal type."""
-
-    # Create config with unknown journal
-    config_dir = tmp_path / "invalid_journal_config"
-    config_dir.mkdir()
-    config_file = config_dir / "pyproject.toml"
-    config_content = """
-        [project]
-        name = "test-project-invalid-journal"
-        version = "0.1.0"
-
-        [tool.queueio]
-        pika = "unknown://localhost:5672"
-        """
-    config_file.write_text(config_content)
-
-    # Change to config directory
-    original_cwd = os.getcwd()
-    os.chdir(config_dir)
-
-    # Clear registry to isolate test
-    original_registry = dict(ROUTINE_REGISTRY)
-    ROUTINE_REGISTRY.clear()
-
-    try:
-        # Should raise ValueError for unknown journal URI scheme
-        with pytest.raises(
-            ValueError,
-            match="URI scheme must be 'amqp:', got: unknown://localhost:5672",
-        ):
-            QueueIO()
-    finally:
-        os.chdir(original_cwd)
-        # Restore registry
-        ROUTINE_REGISTRY.clear()
-        ROUTINE_REGISTRY.update(original_registry)
-
-
-def test_queueio_with_uri_broker_config(tmp_path):
-    """QueueIO works with URI-based broker configuration."""
-
-    # Create config with broker URI
-    config_dir = tmp_path / "uri_broker_config"
-    config_dir.mkdir()
-    config_file = config_dir / "pyproject.toml"
-    config_content = """
-        [project]
-        name = "test-project-uri-broker"
-        version = "0.1.0"
-
-        [tool.queueio]
-        pika = "amqp://localhost:5672"
-        """
-    config_file.write_text(config_content)
-
-    # Change to config directory
-    original_cwd = os.getcwd()
-    os.chdir(config_dir)
-
-    # Clear registry to isolate test
-    original_registry = dict(ROUTINE_REGISTRY)
-    ROUTINE_REGISTRY.clear()
-
-    try:
-        queueio = QueueIO()
-        try:
-            # Should work with URI configuration
-            queueio.sync(["test"])
-            queueio.purge(queue="test")
-        finally:
-            queueio.shutdown()
-    finally:
-        os.chdir(original_cwd)
-        # Restore registry
-        ROUTINE_REGISTRY.clear()
-        ROUTINE_REGISTRY.update(original_registry)
-
-
-def test_queueio_with_uri_journal_config(tmp_path):
-    """QueueIO works with URI-based journal configuration."""
-
-    # Create config with journal URI
-    config_dir = tmp_path / "uri_journal_config"
-    config_dir.mkdir()
-    config_file = config_dir / "pyproject.toml"
-    config_content = """
-        [project]
-        name = "test-project-uri-journal"
-        version = "0.1.0"
-
-        [tool.queueio]
-        pika = "amqp://localhost:5672"
-        """
-    config_file.write_text(config_content)
-
-    # Change to config directory
-    original_cwd = os.getcwd()
-    os.chdir(config_dir)
-
-    # Clear registry to isolate test
-    original_registry = dict(ROUTINE_REGISTRY)
-    ROUTINE_REGISTRY.clear()
-
-    try:
-        queueio = QueueIO()
-        try:
-            # Should work with URI configuration
-            queueio.sync(["test"])
-            queueio.purge(queue="test")
-        finally:
-            queueio.shutdown()
-    finally:
-        os.chdir(original_cwd)
-        # Restore registry
-        ROUTINE_REGISTRY.clear()
-        ROUTINE_REGISTRY.update(original_registry)
-
-
-def test_queueio_with_both_uri_configs(tmp_path):
-    """QueueIO works with both broker and journal as URIs."""
-
-    # Create config with both URIs
-    config_dir = tmp_path / "both_uri_config"
-    config_dir.mkdir()
-    config_file = config_dir / "pyproject.toml"
-    config_content = """
-        [project]
-        name = "test-project-both-uri"
-        version = "0.1.0"
-
-        [tool.queueio]
-        pika = "amqp://localhost:5672"
-        """
-    config_file.write_text(config_content)
-
-    # Change to config directory
-    original_cwd = os.getcwd()
-    os.chdir(config_dir)
-
-    # Clear registry to isolate test
-    original_registry = dict(ROUTINE_REGISTRY)
-    ROUTINE_REGISTRY.clear()
-
-    try:
-        queueio = QueueIO()
-        try:
-            # Should work with both URI configurations
-            queueio.sync(["test"])
-            queueio.purge(queue="test")
-        finally:
-            queueio.shutdown()
-    finally:
-        os.chdir(original_cwd)
-        # Restore registry
-        ROUTINE_REGISTRY.clear()
-        ROUTINE_REGISTRY.update(original_registry)
-
-
 def test_queueio_with_invalid_broker_uri_scheme(tmp_path):
     """QueueIO fails with invalid URI scheme for broker."""
 
@@ -520,39 +361,199 @@ def test_queueio_with_invalid_environment_pika(monkeypatch):
         ROUTINE_REGISTRY.update(original_registry)
 
 
-def test_queueio_with_invalid_journal_uri_scheme(tmp_path):
-    """QueueIO fails with invalid URI scheme for journal."""
+def test_queueio_with_psycopg_not_yet_implemented(tmp_path):
+    """QueueIO recognizes psycopg config but backend is not yet implemented."""
 
-    # Create config with invalid journal URI scheme
-    config_dir = tmp_path / "invalid_journal_uri"
+    config_dir = tmp_path / "psycopg_config"
     config_dir.mkdir()
     config_file = config_dir / "pyproject.toml"
-    config_content = """
+    config_file.write_text("""
         [project]
-        name = "test-project-invalid-journal-uri"
+        name = "test-project-psycopg"
         version = "0.1.0"
 
         [tool.queueio]
-        pika = "redis://localhost:6379"
-        """
-    config_file.write_text(config_content)
+        broker = "psycopg"
+        journal = "psycopg"
+        psycopg = "postgresql://localhost:5432"
+        """)
 
-    # Change to config directory
     original_cwd = os.getcwd()
     os.chdir(config_dir)
 
-    # Clear registry to isolate test
     original_registry = dict(ROUTINE_REGISTRY)
     ROUTINE_REGISTRY.clear()
 
     try:
-        # Should raise ValueError for invalid URI scheme
-        with pytest.raises(
-            ValueError, match="URI scheme must be 'amqp:', got: redis://localhost:6379"
-        ):
+        with pytest.raises(ValueError, match="not yet implemented"):
             QueueIO()
     finally:
         os.chdir(original_cwd)
-        # Restore registry
+        ROUTINE_REGISTRY.clear()
+        ROUTINE_REGISTRY.update(original_registry)
+
+
+def test_queueio_with_invalid_psycopg_uri_scheme(tmp_path):
+    """QueueIO fails with invalid URI scheme for psycopg."""
+
+    config_dir = tmp_path / "invalid_psycopg_uri"
+    config_dir.mkdir()
+    config_file = config_dir / "pyproject.toml"
+    config_file.write_text("""
+        [project]
+        name = "test-project-invalid-psycopg-uri"
+        version = "0.1.0"
+
+        [tool.queueio]
+        broker = "psycopg"
+        psycopg = "mysql://localhost:3306"
+        """)
+
+    original_cwd = os.getcwd()
+    os.chdir(config_dir)
+
+    original_registry = dict(ROUTINE_REGISTRY)
+    ROUTINE_REGISTRY.clear()
+
+    try:
+        with pytest.raises(ValueError, match="URI scheme must be 'postgresql:'"):
+            QueueIO()
+    finally:
+        os.chdir(original_cwd)
+        ROUTINE_REGISTRY.clear()
+        ROUTINE_REGISTRY.update(original_registry)
+
+
+def test_queueio_with_explicit_broker_config(tmp_path):
+    """QueueIO works with explicit broker selection in config."""
+
+    config_dir = tmp_path / "explicit_broker"
+    config_dir.mkdir()
+    config_file = config_dir / "pyproject.toml"
+    config_file.write_text("""
+        [project]
+        name = "test-project-explicit-broker"
+        version = "0.1.0"
+
+        [tool.queueio]
+        broker = "pika"
+        journal = "pika"
+        pika = "amqp://localhost:5672"
+        """)
+
+    original_cwd = os.getcwd()
+    os.chdir(config_dir)
+
+    original_registry = dict(ROUTINE_REGISTRY)
+    ROUTINE_REGISTRY.clear()
+
+    try:
+        queueio = QueueIO()
+        try:
+            queueio.sync(["test"])
+            queueio.purge(queue="test")
+        finally:
+            queueio.shutdown()
+    finally:
+        os.chdir(original_cwd)
+        ROUTINE_REGISTRY.clear()
+        ROUTINE_REGISTRY.update(original_registry)
+
+
+def test_queueio_with_explicit_backend_via_env(tmp_path, monkeypatch):
+    """QueueIO works with QUEUEIO_BROKER and QUEUEIO_JOURNAL env vars."""
+
+    config_dir = tmp_path / "explicit_env"
+    config_dir.mkdir()
+    config_file = config_dir / "pyproject.toml"
+    config_file.write_text("""
+        [project]
+        name = "test-project-explicit-env"
+        version = "0.1.0"
+
+        [tool.queueio]
+        pika = "amqp://localhost:5672"
+        """)
+
+    original_cwd = os.getcwd()
+    os.chdir(config_dir)
+
+    original_registry = dict(ROUTINE_REGISTRY)
+    ROUTINE_REGISTRY.clear()
+
+    monkeypatch.setenv("QUEUEIO_BROKER", "pika")
+    monkeypatch.setenv("QUEUEIO_JOURNAL", "pika")
+
+    try:
+        queueio = QueueIO()
+        try:
+            queueio.sync(["test"])
+            queueio.purge(queue="test")
+        finally:
+            queueio.shutdown()
+    finally:
+        os.chdir(original_cwd)
+        ROUTINE_REGISTRY.clear()
+        ROUTINE_REGISTRY.update(original_registry)
+
+
+def test_queueio_with_invalid_backend_name(tmp_path):
+    """QueueIO fails with an invalid backend name."""
+
+    config_dir = tmp_path / "invalid_backend"
+    config_dir.mkdir()
+    config_file = config_dir / "pyproject.toml"
+    config_file.write_text("""
+        [project]
+        name = "test-project-invalid-backend"
+        version = "0.1.0"
+
+        [tool.queueio]
+        broker = "redis"
+        pika = "amqp://localhost:5672"
+        """)
+
+    original_cwd = os.getcwd()
+    os.chdir(config_dir)
+
+    original_registry = dict(ROUTINE_REGISTRY)
+    ROUTINE_REGISTRY.clear()
+
+    try:
+        with pytest.raises(ValueError, match="Invalid broker backend 'redis'"):
+            QueueIO()
+    finally:
+        os.chdir(original_cwd)
+        ROUTINE_REGISTRY.clear()
+        ROUTINE_REGISTRY.update(original_registry)
+
+
+def test_queueio_with_backend_selected_but_no_uri(tmp_path):
+    """QueueIO fails when backend is selected but no URI is configured."""
+
+    config_dir = tmp_path / "no_uri"
+    config_dir.mkdir()
+    config_file = config_dir / "pyproject.toml"
+    config_file.write_text("""
+        [project]
+        name = "test-project-no-uri"
+        version = "0.1.0"
+
+        [tool.queueio]
+        broker = "pika"
+        journal = "pika"
+        """)
+
+    original_cwd = os.getcwd()
+    os.chdir(config_dir)
+
+    original_registry = dict(ROUTINE_REGISTRY)
+    ROUTINE_REGISTRY.clear()
+
+    try:
+        with pytest.raises(ValueError, match="no URI configured"):
+            QueueIO()
+    finally:
+        os.chdir(original_cwd)
         ROUTINE_REGISTRY.clear()
         ROUTINE_REGISTRY.update(original_registry)
