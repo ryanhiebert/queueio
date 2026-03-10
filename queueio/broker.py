@@ -14,12 +14,6 @@ class Broker(ABC):
     at-least-once delivery.
     """
 
-    @classmethod
-    @abstractmethod
-    def from_uri(cls, uri: str, /):
-        """Create a broker instance from a URI."""
-        raise NotImplementedError("Subclasses must implement this method.")
-
     @abstractmethod
     def sync(self, queues: Iterable[str], *, recreate: bool = False):
         """Ensure the given queues are ready to use.

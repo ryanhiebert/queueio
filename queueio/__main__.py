@@ -31,8 +31,7 @@ app.add_typer(
 @routine_app.command("list")
 def routine_list():
     """Show all registered routines."""
-    queueio = QueueIO()
-    try:
+    with QueueIO.default() as queueio:
         routines = queueio.routines()
 
         if not routines:
@@ -52,8 +51,6 @@ def routine_list():
         print(f"{'-' * name_width}-+-{'-' * path_width}")
         for routine, path in zip(routines, function_paths, strict=False):
             print(f"{routine.name:<{name_width}} | {path:<{path_width}}")
-    finally:
-        queueio.shutdown()
 
 
 @app.command(rich_help_panel="Commands")
@@ -63,17 +60,16 @@ def monitor(raw: bool = False):
     Show a live view of queueio activity. Use --raw for detailed event output.
     """
     if raw:
-        queueio = QueueIO()
-        events = queueio.subscribe({object})
-        try:
-            while True:
-                print(events.get())
-        except KeyboardInterrupt:
-            print("Shutting down gracefully.")
-        finally:
-            queueio.shutdown()
+        with QueueIO.default() as queueio:
+            events = queueio.subscribe({object})
+            try:
+                while True:
+                    print(events.get())
+            except KeyboardInterrupt:
+                print("Shutting down gracefully.")
     else:
-        Monitor().run()
+        with QueueIO.default() as queueio:
+            Monitor(queueio).run()
 
 
 @app.command(rich_help_panel="Commands")
@@ -93,8 +89,8 @@ def run(
     The worker will process invocations from the specified queue,
     as many at a time as specified by the concurrency.
     """
-    queueio = QueueIO()
-    Worker(queueio, queuespec)()
+    with QueueIO.default() as queueio:
+        Worker(queueio, queuespec)()
 
 
 @app.command(rich_help_panel="Commands")
@@ -108,8 +104,7 @@ def sync(
     ] = False,
 ):
     """Sync resources for the broker and journal."""
-    queueio = QueueIO()
-    try:
+    with QueueIO.default() as queueio:
         routines = queueio.routines()
 
         if not routines:
@@ -133,8 +128,6 @@ def sync(
             raise typer.Exit(1) from None
 
         print(f"Successfully synced {len(queues)} queue(s)")
-    finally:
-        queueio.shutdown()
 
 
 @queue_app.command("purge")
@@ -153,8 +146,7 @@ def queue_purge(
     This will remove all pending messages from the given queues.
     Use with caution as this operation cannot be undone.
     """
-    queueio = QueueIO()
-    try:
+    with QueueIO.default() as queueio:
         queue_list = [q.strip() for q in queues.split(",") if q.strip()]
         if not queue_list:
             print("Error: No valid queue names provided")
@@ -165,8 +157,6 @@ def queue_purge(
             queueio.purge(queue=queue)
 
         print(f"Successfully purged {len(queue_list)} queue(s)")
-    finally:
-        queueio.shutdown()
 
 
 if __name__ == "__main__":

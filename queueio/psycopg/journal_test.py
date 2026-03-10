@@ -32,11 +32,9 @@ pytestmark = pytest.mark.skipif(
 class TestPsycopgJournal(BaseJournalTest):
     @pytest.fixture
     def journal(self):
-        journal = PsycopgJournal.from_uri(PSYCOPG_TEST_URI)
+        with PsycopgJournal.connect(PSYCOPG_TEST_URI) as journal:
+            # Truncate to isolate tests
+            with psycopg.connect(PSYCOPG_TEST_URI, autocommit=True) as conn:
+                conn.execute("TRUNCATE queueio_journal")
 
-        # Truncate to isolate tests
-        with psycopg.connect(PSYCOPG_TEST_URI, autocommit=True) as conn:
-            conn.execute("TRUNCATE queueio_journal")
-
-        yield journal
-        journal.shutdown()
+            yield journal

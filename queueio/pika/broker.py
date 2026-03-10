@@ -1,9 +1,9 @@
+from collections.abc import Generator
 from collections.abc import Iterable
+from contextlib import contextmanager
 from contextlib import suppress
 from threading import Lock
 
-from pika import URLParameters
-from pika.connection import Parameters
 from pika.spec import BasicProperties
 
 from queueio.broker import Broker
@@ -17,12 +17,16 @@ class PikaBroker(Broker):
     """A broker enables producing and consuming messages on a queue."""
 
     @classmethod
-    def from_uri(cls, uri: str, /):
-        """Create a broker instance from a URI."""
-        return cls(URLParameters(uri))
+    @contextmanager
+    def connect(cls, connection: ThreadsafeConnection) -> Generator[PikaBroker]:
+        broker = cls(connection)
+        try:
+            yield broker
+        finally:
+            broker.shutdown()
 
-    def __init__(self, connection_params: Parameters):
-        self.__connection = ThreadsafeConnection(connection_params)
+    def __init__(self, connection: ThreadsafeConnection):
+        self.__connection = connection
         self.__channel = self.__connection.channel()
         self.__shutdown_lock = Lock()
         self.__shutdown = False
@@ -65,7 +69,4 @@ class PikaBroker(Broker):
             self.__shutdown = True
             for receiver in self.__receivers:
                 receiver.shutdown()
-            self.__connection.close()
-
-    def __del__(self):
-        self.shutdown()
+            self.__channel.close()

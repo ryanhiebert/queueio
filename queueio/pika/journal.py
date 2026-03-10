@@ -1,9 +1,8 @@
+from collections.abc import Generator
 from collections.abc import Iterator
+from contextlib import contextmanager
 from threading import Lock
 from typing import cast
-
-from pika import URLParameters
-from pika.connection import Parameters
 
 from queueio.journal import Journal
 
@@ -12,14 +11,17 @@ from .threadsafe import ThreadsafeConnection
 
 class PikaJournal(Journal):
     @classmethod
-    def from_uri(cls, uri: str, /):
-        """Create a journal instance from a URI."""
-        return cls(URLParameters(uri))
+    @contextmanager
+    def connect(cls, connection: ThreadsafeConnection) -> Generator[PikaJournal]:
+        journal = cls(connection)
+        try:
+            yield journal
+        finally:
+            journal.shutdown()
 
-    def __init__(self, connection_params: Parameters):
-        self.__connection = ThreadsafeConnection(connection_params)
-        self.__subscribe_channel = self.__connection.channel()
-        self.__publish_channel = self.__connection.channel()
+    def __init__(self, connection: ThreadsafeConnection):
+        self.__subscribe_channel = connection.channel()
+        self.__publish_channel = connection.channel()
 
         declare_result = self.__subscribe_channel.queue_declare("", exclusive=True)
         self.__subscribe_queue = cast(str, declare_result.method.queue)
@@ -55,4 +57,3 @@ class PikaJournal(Journal):
             self.__subscribe_channel.cancel(self.__subscribe_consumer_tag)
             self.__subscribe_channel.close()
             self.__publish_channel.close()
-            self.__connection.close()

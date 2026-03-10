@@ -4,11 +4,13 @@ import tomllib
 from collections.abc import Generator
 from collections.abc import Iterable
 from concurrent.futures import Future
+from contextlib import AbstractContextManager
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Self
 
+from .backend import Backend
 from .broker import Broker
 from .consumer import Consumer
 from .django import setup as _django_setup
@@ -39,14 +41,29 @@ class QueueIO:
         assert queueio is not None, "No active QueueIO instance"
         return queueio
 
+    @classmethod
+    @contextmanager
+    def default(cls) -> Generator[Self]:
+        """Create a QueueIO from configuration with proper lifecycle management."""
+        with (
+            cls.__connect() as backend,
+            backend.broker() as broker,
+            backend.journal() as journal,
+        ):
+            instance = cls(broker=broker, journal=journal)
+            try:
+                yield instance
+            finally:
+                instance.shutdown()
+
     def __init__(
         self,
         *,
-        broker: Broker | None = None,
-        journal: Journal | None = None,
+        broker: Broker,
+        journal: Journal,
     ):
-        self.__broker = broker or self.__default_broker()
-        self.__stream = Stream(journal or self.__default_journal())
+        self.__broker = broker
+        self.__stream = Stream(journal)
         self.__invocations = dict[Invocation, Message]()
         self.__register_routines()
 
@@ -60,98 +77,51 @@ class QueueIO:
             self.__active.reset(token)
             self.shutdown()
 
-    def __pyproject(self) -> Path | None:
+    @staticmethod
+    def __pyproject() -> Path | None:
         for path in [cwd := Path.cwd(), *cwd.parents]:
             candidate = path / "pyproject.toml"
             if candidate.is_file():
                 return candidate
         return None
 
-    def __config(self) -> dict:
-        if pyproject := self.__pyproject():
+    @staticmethod
+    def __config() -> dict:
+        pyproject = QueueIO.__pyproject()
+        if pyproject:
             with pyproject.open("rb") as f:
                 config = tomllib.load(f)
             return config.get("tool", {}).get("queueio", {})
         return {}
 
-    def __default_broker(self) -> Broker:
-        config = self.__config()
-
-        backend = os.environ.get("QUEUEIO_BROKER") or config.get("broker") or "pika"
-        if backend not in ("pika", "psycopg"):
+    @staticmethod
+    def __resolve_uri() -> str:
+        config = QueueIO.__config()
+        uri = os.environ.get("QUEUEIO_BROKER") or config.get("broker")
+        if not uri:
             raise ValueError(
-                f"Invalid broker backend '{backend}'. Must be 'pika' or 'psycopg'."
+                "No broker configured. "
+                "Set QUEUEIO_BROKER env var or 'broker' in [tool.queueio]."
             )
+        return uri
 
-        if backend == "pika":
-            uri = os.environ.get("QUEUEIO_PIKA") or config.get("pika")
-            if not uri:
-                raise ValueError(
-                    "Pika broker selected but no URI configured. "
-                    "Set QUEUEIO_PIKA env var or 'pika' in [tool.queueio]."
-                )
-            if not uri.startswith("amqp:"):
-                raise ValueError(f"URI scheme must be 'amqp:', got: {uri}")
-            from .pika.broker import PikaBroker
+    @staticmethod
+    def __connect() -> AbstractContextManager[Backend]:
+        uri = QueueIO.__resolve_uri()
+        if uri.startswith("amqp://") or uri.startswith("amqps://"):
+            from .pika import PikaBackend
 
-            return PikaBroker.from_uri(uri)
-
-        if backend == "psycopg":
-            uri = os.environ.get("QUEUEIO_PSYCOPG") or config.get("psycopg")
-            if not uri:
-                raise ValueError(
-                    "Psycopg broker selected but no URI configured. "
-                    "Set QUEUEIO_PSYCOPG env var or 'psycopg' in [tool.queueio]."
-                )
-            if not (uri.startswith("postgresql:") or uri.startswith("postgres:")):
-                raise ValueError(f"URI scheme must be 'postgresql:', got: {uri}")
-            raise ValueError("Broker backend 'psycopg' is not yet implemented.")
-
-        raise ValueError(f"Unknown broker backend: {backend}")
-
-    def __default_journal(self) -> Journal:
-        config = self.__config()
-
-        backend = os.environ.get("QUEUEIO_JOURNAL") or config.get("journal") or "pika"
-        if backend not in ("pika", "psycopg"):
-            raise ValueError(
-                f"Invalid journal backend '{backend}'. Must be 'pika' or 'psycopg'."
-            )
-
-        if backend == "pika":
-            uri = os.environ.get("QUEUEIO_PIKA") or config.get("pika")
-            if not uri:
-                raise ValueError(
-                    "Pika journal selected but no URI configured. "
-                    "Set QUEUEIO_PIKA env var or 'pika' in [tool.queueio]."
-                )
-            if not uri.startswith("amqp:"):
-                raise ValueError(f"URI scheme must be 'amqp:', got: {uri}")
-            from .pika.journal import PikaJournal
-
-            return PikaJournal.from_uri(uri)
-
-        if backend == "psycopg":
-            uri = os.environ.get("QUEUEIO_PSYCOPG") or config.get("psycopg")
-            if not uri:
-                raise ValueError(
-                    "Psycopg journal selected but no URI configured. "
-                    "Set QUEUEIO_PSYCOPG env var or 'psycopg' in [tool.queueio]."
-                )
-            if not (uri.startswith("postgresql:") or uri.startswith("postgres:")):
-                raise ValueError(f"URI scheme must be 'postgresql:', got: {uri}")
-            from .psycopg.journal import PsycopgJournal
-
-            return PsycopgJournal.from_uri(uri)
-
-        raise ValueError(f"Unknown journal backend: {backend}")
+            return PikaBackend.connect(uri)
+        if uri.startswith("postgresql://") or uri.startswith("postgres://"):
+            raise ValueError("Broker 'psycopg' is not yet implemented.")
+        raise ValueError(f"Unsupported URI scheme: {uri}")
 
     def __register_routines(self):
         """Load routine modules from pyproject.toml."""
         for hook in [_django_setup]:
             hook()
 
-        config = self.__config()
+        config = QueueIO.__config()
         modules = config.get("register", [])
 
         for module_name in modules:

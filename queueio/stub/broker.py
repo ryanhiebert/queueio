@@ -1,4 +1,6 @@
+from collections.abc import Generator
 from collections.abc import Iterable
+from contextlib import contextmanager
 from threading import Lock
 
 from queueio.broker import Broker
@@ -12,6 +14,15 @@ from .receiver import StubReceiver
 class StubBroker(Broker):
     __priorities = 10
 
+    @classmethod
+    @contextmanager
+    def create(cls) -> Generator[StubBroker]:
+        broker = cls()
+        try:
+            yield broker
+        finally:
+            broker.shutdown()
+
     def __init__(self):
         self.__queues = dict[str, dict[int, Queue[bytes]]]()
         self.__processing = set[Message]()
@@ -19,10 +30,6 @@ class StubBroker(Broker):
         self.__receivers = set[StubReceiver]()
         self.__shutdown_lock = Lock()
         self.__shutdown = False
-
-    @classmethod
-    def from_uri(cls, uri: str, /):
-        return cls()
 
     def sync(self, queues: Iterable[str], *, recreate: bool = False):
         # Always recreate, because the state isn't persistent

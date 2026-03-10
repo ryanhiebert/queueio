@@ -17,9 +17,9 @@ class Monitor(App):
 
     TITLE = "queueio Monitor"
 
-    def __init__(self):
+    def __init__(self, queueio: QueueIO):
         super().__init__()
-        self.__queueio = QueueIO()
+        self.__queueio = queueio
         self.__thread = Thread(target=self.__listen)
         self.__events = self.__queueio.subscribe(
             {

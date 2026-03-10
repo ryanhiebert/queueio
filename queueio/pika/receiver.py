@@ -78,3 +78,4 @@ class PikaReceiver(Receiver):
 
             for consumer_tag in self.__consumer_tag.values():
                 self.__channel.cancel(consumer_tag=consumer_tag)
+            self.__channel.close()

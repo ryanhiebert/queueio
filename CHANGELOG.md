@@ -8,8 +8,13 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+[0.7.0] - 2026-03-09
+--------------------
+
 ### Breaking Changes
 
+- The `pika` configuration key in `[tool.queueio]` has been renamed to `broker`.
+- The `QUEUEIO_PIKA` environment variable has been renamed to `QUEUEIO_BROKER`.
 - Removed `Broker.create(queue)`, in favor of `Broker.sync([queue])`.
 - Removed `Broker.delete(queue)`, without replacement.
 - Removed `QueueIO.create(queue)`, in favor of `QueueIO.sync([queue])`.
@@ -19,6 +24,8 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 
 - Added `Broker.sync()` to back `queueio sync`.
 - Added `QueueIO.sync()` to back `queueio sync`.
+- `Backend` ABC with `broker()` and `journal()` methods
+  that return independent context managers with their own lifecycles.
 
 [0.6.0] - 2026-02-16
 --------------------
@@ -118,7 +125,8 @@ Thank you to Nick Anderegg for allowing me to use the queueio name for this proj
 - The queuespec syntax to `queue run` to consume multiple queues with shared capacity.
 - `queueio monitor` command to monitor activity in the queueio system.
 
-[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.6.0...HEAD
+[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.7.0...HEAD
+[0.7.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.6.0...tag/0.7.0
 [0.6.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.5.0...tag/0.6.0
 [0.5.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.4.0...tag/0.5.0
 [0.4.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.3.0...tag/0.4.0

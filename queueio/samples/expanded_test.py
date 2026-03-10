@@ -13,9 +13,7 @@ from .expanded import irregular
 @pytest.mark.timeout(10)
 def test_integration():
     # Prefers a clean environment and queue
-    queueio = QueueIO()
-
-    with queueio.activate():
+    with QueueIO.default() as queueio, queueio.activate():
         queueio.sync(["expanded"])
         queueio.purge(queue="expanded")
         events = queueio.subscribe({Invocation.Completed})

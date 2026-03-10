@@ -12,9 +12,7 @@ from .basic import yielding
 
 @pytest.mark.timeout(10)
 def test_integration():
-    queueio = QueueIO()
-
-    with queueio.activate():
+    with QueueIO.default() as queueio, queueio.activate():
         queueio.sync(["basic"])
         queueio.purge(queue="basic")
         events = queueio.subscribe({Invocation.Completed})

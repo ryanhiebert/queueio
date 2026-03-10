@@ -13,9 +13,7 @@ from .queuevar import demonstrate_queuevar
 @pytest.mark.timeout(10)
 def test_queuevar_propagation():
     """QueueVar values propagate through the full invocation chain."""
-    queueio = QueueIO()
-
-    with queueio.activate():
+    with QueueIO.default() as queueio, queueio.activate():
         queueio.sync(["queuevar"])
         queueio.purge(queue="queuevar")
         events = queueio.subscribe({Invocation.Completed})

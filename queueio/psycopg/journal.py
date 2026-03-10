@@ -4,7 +4,9 @@ The PsycopgJournal implementation has not been extensively reviewed. It passes
 the base test suite but may contain bugs or design flaws. You shouldn't use this yet.
 """
 
+from collections.abc import Generator
 from collections.abc import Iterator
+from contextlib import contextmanager
 from contextlib import suppress
 from threading import Lock
 
@@ -15,8 +17,13 @@ from queueio.journal import Journal
 
 class PsycopgJournal(Journal):
     @classmethod
-    def from_uri(cls, uri: str, /):
-        return cls(uri)
+    @contextmanager
+    def connect(cls, uri: str) -> Generator[PsycopgJournal]:
+        journal = cls(uri)
+        try:
+            yield journal
+        finally:
+            journal.shutdown()
 
     def __init__(self, uri: str):
         self.__publish_conn = psycopg.connect(uri, autocommit=True)

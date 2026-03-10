@@ -13,9 +13,7 @@ from .priority import demonstrate_priorities
 @pytest.mark.timeout(10)
 def test_priority_propagation():
     """Priority propagates through the full invocation chain."""
-    queueio = QueueIO()
-
-    with queueio.activate():
+    with QueueIO.default() as queueio, queueio.activate():
         queueio.sync(["priority"])
         queueio.purge(queue="priority")
         events = queueio.subscribe({Invocation.Completed})

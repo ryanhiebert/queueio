@@ -39,7 +39,7 @@ def test_django(tmp_path, settings):
         f"\n"
         f"[tool.queueio]\n"
         f'register = ["queueio.samples.django.job"]\n'
-        f'pika = "amqp://localhost:5672"\n'
+        f'broker = "amqp://localhost:5672"\n'
     )
 
     subprocess.run(
