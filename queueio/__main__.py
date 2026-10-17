@@ -4,10 +4,10 @@ import typer
 from typer import Argument
 from typer import Typer
 
-from .monitor import Monitor
 from .queueio import QueueIO
 from .queuespec import QueueSpec
 from .worker import Worker
+lazy from .monitor import Monitor
 
 app = Typer()
 

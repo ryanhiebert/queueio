@@ -2,7 +2,7 @@
 
 Scratchpad for working out the SQL needed to implement the Broker interface.
 
-We're Python 3.14 exclusive, so we'll use psycopg's t-string support
+We're Python 3.15 exclusive, so we'll use psycopg's t-string support
 for queries. T-strings let us embed parameters directly in the SQL
 with safe interpolation, avoiding positional placeholders:
 

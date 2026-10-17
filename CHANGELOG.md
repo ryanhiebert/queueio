@@ -8,6 +8,14 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+### Breaking Changes
+
+- Python 3.15 or later is now required; Python 3.14 is no longer supported.
+
+### Changed
+
+- Load the monitor UI lazily so other CLI commands avoid importing Textual.
+
 [0.7.0] - 2026-03-09
 --------------------
 

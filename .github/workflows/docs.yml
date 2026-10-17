@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv python install 3.14t
+      - run: uv python install 3.15t
       - run: uv sync --group dev
       - run: uv run mkdocs build --strict
       - uses: actions/upload-pages-artifact@v3
