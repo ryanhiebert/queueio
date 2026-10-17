@@ -1,10 +1,17 @@
+import json
 import os
 
 import pytest
+from pika import URLParameters
 
 from .queueio import QueueIO
 from .registry import ROUTINE_REGISTRY
 from .stub import StubBackend
+
+
+def test_broker_uri_default_port(monkeypatch):
+    monkeypatch.setenv("QUEUEIO_BROKER", "amqp://localhost")
+    assert URLParameters(QueueIO.broker_uri()).port == 5672
 
 
 def test_queueio_with_custom_broker():
@@ -56,19 +63,22 @@ def test_different_queueio_instances_are_independent():
             queueio2.shutdown()
 
 
-def test_queueio_loads_configuration_from_pyproject(tmp_path):
+def test_queueio_loads_configuration_from_pyproject(tmp_path, monkeypatch):
     """QueueIO loads broker configuration from pyproject.toml."""
+
+    uri = QueueIO.broker_uri()
+    monkeypatch.delenv("QUEUEIO_BROKER", raising=False)
 
     config_dir = tmp_path / "default_config"
     config_dir.mkdir()
     config_file = config_dir / "pyproject.toml"
-    config_content = """
+    config_content = f"""
         [project]
         name = "test-project-defaults"
         version = "0.1.0"
 
         [tool.queueio]
-        broker = "amqp://localhost:5672"
+        broker = {json.dumps(uri)}
         """
     config_file.write_text(config_content)
 
@@ -127,20 +137,23 @@ def test_queueio_routines_method():
             ROUTINE_REGISTRY.update(original_registry)
 
 
-def test_queueio_with_valid_config(tmp_path):
+def test_queueio_with_valid_config(tmp_path, monkeypatch):
     """QueueIO works with a valid pyproject.toml configuration."""
+
+    uri = QueueIO.broker_uri()
+    monkeypatch.delenv("QUEUEIO_BROKER", raising=False)
 
     config_dir = tmp_path / "valid_config"
     config_dir.mkdir()
     config_file = config_dir / "pyproject.toml"
-    config_content = """
+    config_content = f"""
         [project]
         name = "test-project"
         version = "0.1.0"
 
         [tool.queueio]
         register = ["queueio.samples.expanded"]
-        broker = "amqp://localhost:5672"
+        broker = {json.dumps(uri)}
         """
     config_file.write_text(config_content)
 
@@ -158,8 +171,10 @@ def test_queueio_with_valid_config(tmp_path):
         os.chdir(original_cwd)
 
 
-def test_queueio_with_unsupported_uri_scheme(tmp_path):
+def test_queueio_with_unsupported_uri_scheme(tmp_path, monkeypatch):
     """QueueIO fails with an unsupported URI scheme."""
+
+    monkeypatch.delenv("QUEUEIO_BROKER", raising=False)
 
     config_dir = tmp_path / "unsupported_scheme"
     config_dir.mkdir()
@@ -195,6 +210,8 @@ def test_queueio_with_unsupported_uri_scheme(tmp_path):
 def test_queueio_with_environment_variable(tmp_path, monkeypatch):
     """QueueIO prefers environment variable over config."""
 
+    uri = QueueIO.broker_uri()
+
     config_dir = tmp_path / "env_test"
     config_dir.mkdir()
     config_file = config_dir / "pyproject.toml"
@@ -214,7 +231,7 @@ def test_queueio_with_environment_variable(tmp_path, monkeypatch):
     original_registry = dict(ROUTINE_REGISTRY)
     ROUTINE_REGISTRY.clear()
 
-    monkeypatch.setenv("QUEUEIO_BROKER", "amqp://localhost:5672")
+    monkeypatch.setenv("QUEUEIO_BROKER", uri)
 
     try:
         with QueueIO.default() as queueio:
@@ -244,8 +261,10 @@ def test_queueio_with_invalid_environment_variable(monkeypatch):
         ROUTINE_REGISTRY.update(original_registry)
 
 
-def test_queueio_with_psycopg_not_yet_implemented(tmp_path):
+def test_queueio_with_psycopg_not_yet_implemented(tmp_path, monkeypatch):
     """QueueIO recognizes psycopg broker but it is not yet implemented."""
+
+    monkeypatch.delenv("QUEUEIO_BROKER", raising=False)
 
     config_dir = tmp_path / "psycopg_config"
     config_dir.mkdir()
@@ -277,8 +296,10 @@ def test_queueio_with_psycopg_not_yet_implemented(tmp_path):
         ROUTINE_REGISTRY.update(original_registry)
 
 
-def test_queueio_with_no_broker_configured(tmp_path):
+def test_queueio_with_no_broker_configured(tmp_path, monkeypatch):
     """QueueIO fails when no broker is configured."""
+
+    monkeypatch.delenv("QUEUEIO_BROKER", raising=False)
 
     config_dir = tmp_path / "no_broker"
     config_dir.mkdir()

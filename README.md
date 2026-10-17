@@ -59,6 +59,14 @@ to allow a project to be deployed in multiple environments.
 QUEUEIO_BROKER='amqp://guest:guest@localhost:5672/'
 ```
 
+QueueIO requires RabbitMQ's global QoS for shared concurrency limits and
+suspending tasks. On RabbitMQ 4.3, enable it in `rabbitmq.conf` and restart
+the broker:
+
+```ini
+deprecated_features.permit.global_qos = true
+```
+
 Sync the queues to the broker:
 
 ```python

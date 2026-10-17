@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from concurrent.futures import Future
 from contextlib import contextmanager
 from contextlib import suppress
+from queue import Empty
 from queue import Queue
 from queue import ShutDown
 from threading import Event
@@ -94,6 +95,38 @@ class ThreadsafeChannel:
             yield future
         finally:
             self.__pending.remove(future)
+
+    def supports_global_qos(self) -> bool:
+        """Probe global QoS on a fresh, disposable channel.
+
+        Global QoS shares a concurrency limit across a receiver's queues.
+        Updating that limit lets suspended tasks free capacity for other tasks.
+        """
+        queues = []
+        try:
+            self.qos(prefetch_count=1, global_qos=True)
+            for _ in range(2):
+                result = self.queue_declare("", exclusive=True, auto_delete=True)
+                queue = cast(str, result.method.queue)
+                queues.append(queue)
+                self.publish("", queue, b"")
+                self.consume(queue)
+            try:
+                self.__messages.get(timeout=5)
+                try:
+                    self.__messages.get(timeout=0.2)
+                except Empty:
+                    pass
+                else:
+                    return False
+                self.qos(prefetch_count=2, global_qos=True)
+                self.__messages.get(timeout=5)
+            except Empty:
+                return False
+            return True
+        finally:
+            for queue in queues:
+                self.delete(queue)
 
     def queue_declare(
         self,

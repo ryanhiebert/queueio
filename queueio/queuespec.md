@@ -9,13 +9,13 @@ from queueio.queuespec import QueueSpec
 
 # Single queue
 spec = QueueSpec.parse("production=10")
-print(spec.queues)      # ['production']
-print(spec.concurrency) # 10
+print(spec.queues)  # ['production']
+print(spec.concurrency)  # 10
 
 # Multiple queues
 spec = QueueSpec.parse("high,medium,low=5")
-print(spec.queues)      # ['high', 'medium', 'low']
-print(spec.concurrency) # 5
+print(spec.queues)  # ['high', 'medium', 'low']
+print(spec.concurrency)  # 5
 ```
 
 ## Format

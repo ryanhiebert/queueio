@@ -47,7 +47,7 @@ dev = [
     "mkdocs-material>=9.7.1",
     "mkdocs-same-dir>=0.1.3",
     "pytest>=8.4.1",
-    "pytest-cov>=6.0.0",
+    "pytest-cov>=7.0.0",
     "pytest-timeout>=2.4.0",
     "ruff>=0.9.6",
     "textual-dev>=1.7.0",
@@ -71,12 +71,16 @@ register = [
 broker = "amqp://localhost:5672"
 
 [tool.pytest.ini_options]
+markers = ["no_global_qos: requires a broker without channel-wide QoS"]
+addopts = "-m 'not no_global_qos'"
 timeout = 30
 norecursedirs = ["site"]
 
 [tool.coverage.run]
 branch = true
 source = ["queueio"]
+patch = ["subprocess"]
+sigterm = true
 
 [build-system]
 requires = ["hatchling"]

@@ -19,6 +19,17 @@ class PikaBroker(Broker):
     @classmethod
     @contextmanager
     def connect(cls, connection: ThreadsafeConnection) -> Generator[PikaBroker]:
+        channel = connection.channel()
+        try:
+            if not channel.supports_global_qos():
+                raise RuntimeError(
+                    "Could not verify channel-wide QoS support. QueueIO requires "
+                    "it for concurrency limits and task suspension. "
+                    "On RabbitMQ, set deprecated_features.permit.global_qos = true in "
+                    "rabbitmq.conf and restart RabbitMQ."
+                )
+        finally:
+            channel.close()
         broker = cls(connection)
         try:
             yield broker

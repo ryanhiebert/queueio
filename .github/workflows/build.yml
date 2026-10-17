@@ -6,16 +6,42 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
     services:
       rabbitmq:
         image: rabbitmq
         env:
           RABBITMQ_DEFAULT_USER: guest
           RABBITMQ_DEFAULT_PASS: guest
+          RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit permit_deprecated_features #{global_qos=>true}"
         ports:
-          - 5672:5672
+          - 5672/tcp
         options: >-
           --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      rabbitmq_no_global_qos:
+        image: rabbitmq
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+          RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit permit_deprecated_features #{global_qos=>false}"
+        ports:
+          - 5672/tcp
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      lavinmq:
+        image: cloudamqp/lavinmq
+        ports:
+          - 5672/tcp
+        options: >-
+          --health-cmd "lavinmqctl status"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -34,8 +60,30 @@ jobs:
       - name: Run basedpyright
         run: uv run basedpyright
       - name: Run tests
-        run: uv run pytest
+        env:
+          QUEUEIO_BROKER: amqp://guest:guest@localhost:${{ job.services.rabbitmq.ports['5672'] }}/
+        run: uv run pytest --cov --cov-report=
         timeout-minutes: 2
+      - name: Test broker without channel-wide QoS
+        env:
+          QUEUEIO_BROKER: amqp://guest:guest@localhost:${{ job.services.rabbitmq_no_global_qos.ports['5672'] }}/
+        run: uv run pytest -m no_global_qos --cov --cov-append --cov-report=
+      - name: Test LavinMQ
+        env:
+          QUEUEIO_BROKER: amqp://guest:guest@localhost:${{ job.services.lavinmq.ports['5672'] }}/
+        run: uv run pytest --cov --cov-append --cov-report=
+        timeout-minutes: 2
+      - name: Report coverage
+        run: |
+          uv run coverage report
+          uv run coverage xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          disable_search: true
+          use_oidc: true
+          fail_ci_if_error: true
       - name: Verify built package
         run: |
           uv build

@@ -7,7 +7,9 @@ for queries. T-strings let us embed parameters directly in the SQL
 with safe interpolation, avoiding positional placeholders:
 
 ```python
-cursor.execute(t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})")
+cursor.execute(
+    t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})"
+)
 
 # For identifiers (table/column names), use :i
 cursor.execute(t"NOTIFY {channel:i}, {payload:l}")
@@ -54,13 +56,17 @@ Open questions:
 Insert a task into the queue.
 
 ```python
-cursor.execute(t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})")
+cursor.execute(
+    t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})"
+)
 ```
 
 Might also want to `NOTIFY` here to wake up consumers:
 
 ```python
-cursor.execute(t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})")
+cursor.execute(
+    t"INSERT INTO queueio_tasks (queue, body, priority) VALUES ({queue}, {body}, {priority})"
+)
 cursor.execute(t"NOTIFY queueio, {queue:l}")
 ```
 

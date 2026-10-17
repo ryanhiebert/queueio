@@ -166,7 +166,7 @@ class JournalEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'queueio_journal'
+        db_table = "queueio_journal"
 ```
 
 With LISTEN/NOTIFY added as a PostgreSQL-specific optimization on top.

@@ -9,6 +9,8 @@ from urllib.request import urlopen
 
 import pytest
 
+from queueio.queueio import QueueIO
+
 
 def _wait_for_port(port, timeout=10):
     deadline = time.monotonic() + timeout
@@ -39,7 +41,7 @@ def test_django(tmp_path, settings):
         f"\n"
         f"[tool.queueio]\n"
         f'register = ["queueio.samples.django.job"]\n'
-        f'broker = "amqp://localhost:5672"\n'
+        f"broker = {json.dumps(QueueIO.broker_uri())}\n"
     )
 
     subprocess.run(

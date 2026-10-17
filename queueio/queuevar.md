@@ -51,6 +51,7 @@ so any invocations created during execution inherit the parent's context.
 def inner():
     return tenant_id.get()
 
+
 @routine(name="outer", queue="work")
 async def outer():
     with tenant_id("acme"):

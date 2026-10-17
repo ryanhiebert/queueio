@@ -95,7 +95,7 @@ class QueueIO:
         return {}
 
     @staticmethod
-    def __resolve_uri() -> str:
+    def broker_uri() -> str:
         config = QueueIO.__config()
         uri = os.environ.get("QUEUEIO_BROKER") or config.get("broker")
         if not uri:
@@ -107,7 +107,7 @@ class QueueIO:
 
     @staticmethod
     def __connect() -> AbstractContextManager[Backend]:
-        uri = QueueIO.__resolve_uri()
+        uri = QueueIO.broker_uri()
         if uri.startswith("amqp://") or uri.startswith("amqps://"):
             from .pika import PikaBackend
 
