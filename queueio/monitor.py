@@ -1,3 +1,4 @@
+from noio import ShutDown
 from textual.app import App
 from textual.app import ComposeResult
 from textual.widgets import DataTable
@@ -5,7 +6,6 @@ from textual.widgets import Footer
 from textual.widgets import Header
 
 from .invocation import Invocation
-from .queue import ShutDown
 from .queueio import QueueIO
 from .result import Err
 from .result import Ok

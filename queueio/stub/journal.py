@@ -3,9 +3,10 @@ from collections.abc import Generator
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+from noio import Queue
+from noio import ShutDown
+
 from queueio.journal import Journal
-from queueio.queue import Queue
-from queueio.queue import ShutDown
 
 
 class StubJournal(Journal):

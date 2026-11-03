@@ -6,10 +6,11 @@ from contextlib import suppress
 from contextvars import copy_context
 from threading import Timer
 
+from noio import Queue
+from noio import ShutDown
+
 from .continuation import Continuation
 from .invocation import Invocation
-from .queue import Queue
-from .queue import ShutDown
 from .queueio import QueueIO
 from .queuespec import QueueSpec
 from .result import Err

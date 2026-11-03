@@ -3,9 +3,10 @@ from collections.abc import Iterable
 from contextlib import contextmanager
 from threading import Lock
 
+from noio import Queue
+
 from queueio.broker import Broker
 from queueio.message import Message
-from queueio.queue import Queue
 from queueio.queuespec import QueueSpec
 
 from .receiver import StubReceiver

@@ -15,6 +15,8 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 ### Changed
 
 - Load the monitor UI lazily so other CLI commands avoid importing Textual.
+- Use [noio](https://pypi.org/project/noio/) for internal queues and selection,
+  replacing `queueio.queue` and `queueio.select`.
 
 [0.7.0] - 2026-03-09
 --------------------

@@ -10,6 +10,9 @@ from contextvars import ContextVar
 from pathlib import Path
 from typing import Self
 
+from noio import Queue
+from noio import ShutDown
+
 from .backend import Backend
 from .broker import Broker
 from .consumer import Consumer
@@ -17,8 +20,6 @@ from .django import setup as _django_setup
 from .invocation import Invocation
 from .journal import Journal
 from .message import Message
-from .queue import Queue
-from .queue import ShutDown
 from .queuespec import QueueSpec
 from .queuevar import QueueVar
 from .registry import ROUTINE_REGISTRY

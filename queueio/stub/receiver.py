@@ -4,11 +4,12 @@ from collections.abc import Iterator
 from random import randrange
 from threading import Condition
 
+from noio import Queue
+from noio import ShutDown
+from noio.select import select
+
 from queueio.message import Message
-from queueio.queue import Queue
-from queueio.queue import ShutDown
 from queueio.receiver import Receiver
-from queueio.select import select
 
 
 class StubReceiver(Receiver):
@@ -52,7 +53,7 @@ class StubReceiver(Receiver):
 
             # Wait for a new message without the condition lock
             try:
-                i, value = select(selectors)
+                i, value = select(*selectors)
             except ShutDown:
                 return
 

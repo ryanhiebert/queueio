@@ -3,10 +3,11 @@ from itertools import chain
 from threading import Thread
 from typing import Any
 
+from noio import Queue
+
 import dill
 
 from .journal import Journal
-from .queue import Queue
 
 
 class Stream:
