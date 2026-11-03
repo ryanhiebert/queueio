@@ -18,6 +18,11 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 - Use [noio](https://pypi.org/project/noio/) for internal queues and selection,
   replacing `queueio.queue` and `queueio.select`.
 
+### Fixed
+
+- A failed connection to the broker no longer leaves a thread running
+  that prevents the process from exiting.
+
 [0.7.0] - 2026-03-09
 --------------------
 
