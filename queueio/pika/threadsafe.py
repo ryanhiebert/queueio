@@ -34,7 +34,13 @@ class ThreadsafeConnection:
         )
         self.__thread = Thread(target=self.__connection.ioloop.start)
         self.__thread.start()
-        opened.result()
+        try:
+            opened.result()
+        except BaseException:
+            # Stop the ioloop so a failed connection doesn't leak its thread.
+            self.__connection.ioloop.stop()
+            self.__thread.join()
+            raise
 
     def __wait[T](self, fn: Callable[[], T]):
         # TODO: Throw connection exceptions on all waiters
