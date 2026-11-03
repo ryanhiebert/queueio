@@ -25,6 +25,7 @@ class TestMyBroker(BaseBrokerTest):
 """
 
 import threading
+import time
 from functools import wraps
 
 import pytest
@@ -45,6 +46,18 @@ def skip_if_unsupported(feature_attr):
         return wrapper
 
     return decorator
+
+
+def wait_for(predicate, timeout=1.0, settle=0.05):
+    """Poll until predicate() is true, or until the timeout expires.
+
+    Then wait briefly, so that a receiver exceeding its limit has time to
+    deliver the excess message before the test asserts an exact count.
+    """
+    deadline = time.monotonic() + timeout
+    while not predicate() and time.monotonic() < deadline:
+        time.sleep(0.001)
+    time.sleep(settle)
 
 
 class BaseBrokerTest:
@@ -80,7 +93,7 @@ class BaseBrokerTest:
         thread.start()
 
         # Wait for receiver to reach prefetch limit or timeout
-        thread.join(timeout=0.1)
+        wait_for(lambda: len(received_messages) >= prefetch_limit)
 
         # Should have received exactly prefetch_limit messages and be blocked
         assert len(received_messages) == prefetch_limit
@@ -113,13 +126,13 @@ class BaseBrokerTest:
         thread.start()
 
         # Wait for initial consumption up to prefetch limit
-        thread.join(timeout=0.1)
+        wait_for(lambda: len(received_messages) >= prefetch_limit)
         assert len(received_messages) == prefetch_limit
         assert thread.is_alive()  # Should be blocked
 
         # Pause first message - should free capacity for third message
         receiver.pause(received_messages[0])
-        thread.join(timeout=0.1)
+        wait_for(lambda: len(received_messages) >= 3)
         assert len(received_messages) == 3
 
         # Unpause first message - should receive capacity again
@@ -151,18 +164,18 @@ class BaseBrokerTest:
         thread.start()
 
         # Initial consumption up to prefetch limit
-        thread.join(timeout=0.1)
+        wait_for(lambda: len(received_messages) >= prefetch_limit)
         assert len(received_messages) == prefetch_limit
         assert thread.is_alive()  # Should be blocked
 
         # Finish first message - should allow consuming third message
         receiver.finish(received_messages[0])
-        thread.join(timeout=0.1)
+        wait_for(lambda: len(received_messages) >= 3)
         assert len(received_messages) == 3
 
         # Finish second message - should allow consuming fourth message
         receiver.finish(received_messages[1])
-        thread.join(timeout=0.1)
+        wait_for(lambda: len(received_messages) >= 4)
         assert len(received_messages) == 4
 
         broker.shutdown()
@@ -200,8 +213,7 @@ class BaseBrokerTest:
         thread2.start()
 
         # Allow both receivers to receive up to their limits
-        thread1.join(timeout=0.1)
-        thread2.join(timeout=0.1)
+        wait_for(lambda: len(receiver1_messages) + len(receiver2_messages) >= 5)
 
         # Both receivers should respect their prefetch limits and be blocked
         total_received = len(receiver1_messages) + len(receiver2_messages)
