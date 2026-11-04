@@ -37,7 +37,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       lavinmq:
-        image: cloudamqp/lavinmq
+        # 2.10.3 and later starve consumers sharing a channel with global prefetch.
+        # https://github.com/cloudamqp/lavinmq/issues/2628
+        image: cloudamqp/lavinmq:2.10.2
         ports:
           - 5672/tcp
         options: >-
