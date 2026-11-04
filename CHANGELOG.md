@@ -8,6 +8,9 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 [Unreleased]
 ------------
 
+[0.8.0] - 2026-11-04
+--------------------
+
 ### Breaking Changes
 
 - Python 3.15 or later is now required; Python 3.14 is no longer supported.
@@ -140,7 +143,8 @@ Thank you to Nick Anderegg for allowing me to use the queueio name for this proj
 - The queuespec syntax to `queue run` to consume multiple queues with shared capacity.
 - `queueio monitor` command to monitor activity in the queueio system.
 
-[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.7.0...HEAD
+[Unreleased]: https://github.com/ryanhiebert/queueio/compare/tag/0.8.0...HEAD
+[0.8.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.7.0...tag/0.8.0
 [0.7.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.6.0...tag/0.7.0
 [0.6.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.5.0...tag/0.6.0
 [0.5.0]: https://github.com/ryanhiebert/queueio/compare/tag/0.4.0...tag/0.5.0
